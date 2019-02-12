@@ -2,7 +2,7 @@
 # Will it hang? dataset
 #####################################
 # 
-# Tested in Blender 2.79
+# Tested in Blender 2.79, 2.76b
 #
 # Author: David-Estevez
 #
@@ -10,6 +10,23 @@
 
 import bpy
 from random import uniform
+
+def compute_com(mesh):
+    """
+    Computes the center of mass of a mesh assuming homogeneous vertex density
+    """
+    vertices = list(map(lambda v: v.co, mesh.vertices))
+    result = vertices[0]
+    for vertex in vertices[:1]:  # For some reason, the sum() function doesn't seem to work
+        result+=vertex
+    return result
+
+
+def delete_empties():
+    for name, empty in filter(lambda x: 'Empty' in x[0], bpy.data.objects.items()):
+        empty.select = True
+    bpy.ops.object.delete()
+
 
 # Region in which the random garment will be generated (units: m)
 x_min, x_max = -0.30, 0.30
@@ -33,21 +50,29 @@ bpy.data.objects['Cloth'].bound_box.data.location[2] = uniform(z_max, z_min)
 # 3. Simulate dynamics
 bpy.ops.ptcache.bake_all(bake=True)
 
-# 4. At frame 40, grab a depth frame and save it
+# 4. At frame 'hanging_frame', grab a depth frame and save it
 bpy.data.scenes['Scene'].frame_current = hanging_frame
 bpy.data.scenes['Scene'].render.filepath = 'out-40.png'
 bpy.ops.render.render(write_still=True)
 
-# 5. For frame 40 to frame 120, record x,y,z position of center of bounding box
+# 5. For frame 'hanging_frame' to frame 'final_frame', record x,y,z position of center of bounding box
 com_trajectory = []
 for frame in range(hanging_frame, final_frame+1):
     bpy.data.scenes['Scene'].frame_current = frame
-    bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
-    com_trajectory.append(bpy.data.objects['Cloth'].location)
+    cloth = bpy.data.objects['Cloth']
+    deformed_mesh = cloth.to_mesh(bpy.data.scenes['Scene'], apply_modifiers=True, settings='PREVIEW')
+    com_in_cloth_frame = compute_com(deformed_mesh)
+    com_in_world_frame = cloth.matrix_world*com_in_cloth_frame
+    com_trajectory.append(com_in_world_frame)
     
 with open('out-traj.csv', 'w') as f:
     for point in com_trajectory:
         f.write("{} {} {}\n".format(point[0], point[1], point[2]))
-
+        
+for point in com_trajectory:
+    bpy.ops.object.add(type='EMPTY', view_align=False, enter_editmode=False, location=point)
+for name, empty in filter(lambda x: 'Empty' in x[0], bpy.data.objects.items()):
+    empty.scale = (0.05, 0.05, 0.05)
+    
 # 6. Release physics cache
 bpy.ops.ptcache.free_bake_all()
