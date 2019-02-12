@@ -1,0 +1,25 @@
+$ python
+    import abb
+    R = abb.Robot(ip='192.168.125.1')
+    R.set_cartesian([[1000,0,1000], [0,0,1,0]])
+#R.set_joints([0,0,0,0,90,0])
+
+
+"""def pick_and_place(self, x_pick, y_pick, x_place, y_place, heightFromPickDown):
+    '''
+    Executes a pick and place sequence remotely.
+    :param x_pick: X component of the pick point
+    :param y_pick: Y component of the pick point
+    :param x_place: X component of the place point
+    :param y_place: Y component of the place point
+    :param heightFromPickDown: max height to rise from PickDown point
+    '''
+    msg = '90 '
+    msg += format(x_pick * self.scale_linear,  "+08.1f") + " "
+    msg += format(y_pick * self.scale_linear,  "+08.1f") + " "
+    msg += format(x_place * self.scale_linear, "+08.1f") + " "
+    msg += format(y_place * self.scale_linear, "+08.1f") + " "
+    msg += format(heightFromPickDown * self.scale_linear, "+08.1f") + " "
+    msg += '#'
+
+    return self.send(msg)"""
