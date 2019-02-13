@@ -9,9 +9,11 @@
 #####################################
 
 import bpy
+import os
 from random import uniform
 
-debug = True
+debug = False
+output_path = './'
 
 def compute_com(mesh):
     """
@@ -38,10 +40,13 @@ z_min, z_max = 1.3, 1.5
 hanging_frame = 40
 final_frame = 120
 bpy.data.scenes['Scene'].frame_current = 0
+folder = os.path.abspath(output_path)
+bpy.data.scenes['Scene'].node_tree.nodes["File Output png"].base_path = folder
+bpy.data.scenes['Scene'].node_tree.nodes["File Output exr"].base_path = folder
 
 ### Script starts to do stuff here ###
 
-for i in range(100):
+for i in range(2):
     # 1. Randomly place the cloth (within a [x,y,z] region)
     bpy.data.objects['Cloth'].bound_box.data.location[0] = uniform(x_max, x_min)
     bpy.data.objects['Cloth'].bound_box.data.location[1] = uniform(y_max, y_min)
@@ -55,7 +60,9 @@ for i in range(100):
 
     # 4. At frame 'hanging_frame', grab a depth frame and save it
     bpy.data.scenes['Scene'].frame_current = hanging_frame
-    bpy.data.scenes['Scene'].render.filepath = 'out-40.png'
+    # bpy.data.scenes['Scene'].render.filepath = 'out-40.png'
+    bpy.data.scenes['Scene'].node_tree.nodes["File Output png"].file_slots[0].path = "img-{}.png".format(i)
+    bpy.data.scenes['Scene'].node_tree.nodes["File Output exr"].file_slots[0].path = "img-{}.exr".format(i)
     bpy.ops.render.render(write_still=True)
 
     # 5. For frame 'hanging_frame' to frame 'final_frame', record x,y,z position of center of bounding box
@@ -68,7 +75,7 @@ for i in range(100):
         com_in_world_frame = cloth.matrix_world*com_in_cloth_frame
         com_trajectory.append(com_in_world_frame)
         
-    with open('out-traj.csv', 'w') as f:
+    with open(os.path.join(folder, "img-{}.csv".format(i)), 'w') as f:
         for point in com_trajectory:
             f.write("{} {} {}\n".format(point[0], point[1], point[2]))
             
