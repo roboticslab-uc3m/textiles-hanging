@@ -25,11 +25,37 @@ def compute_com(mesh):
         result+=vertex
     return result/float(len(vertices))
 
-
 def delete_empties():
     for name, empty in filter(lambda x: 'Empty' in x[0], bpy.data.objects.items()):
         empty.select = True
     bpy.ops.object.delete()
+    
+import bpy
+from random import choice
+
+cloth = bpy.data.objects['Cloth']
+
+def delete_vertex_groups(target):
+    bpy.data.scenes['Scene'].objects.active = target
+    bpy.ops.object.vertex_group_remove(all=True)
+
+def create_vertex_groups(target):
+    bpy.data.scenes['Scene'].objects.active = target
+    bpy.ops.object.mode_set(mode = 'EDIT')
+    bpy.ops.mesh.select_mode(type='VERT')
+    bpy.ops.mesh.select_all(action='DESELECT')
+    for i in range(len(target.data.vertices)):  # Not pythonic, but iterator seems not to work for this one
+        bpy.ops.object.mode_set(mode='OBJECT')
+        target.data.vertices[i].select = True
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.object.vertex_group_add()
+        bpy.ops.object.vertex_group_assign()
+        bpy.ops.mesh.select_all(action='DESELECT')
+        
+def set_random_pinning_point(target):
+    group = choice(target.vertex_groups)
+    target.modifiers["VertexWeightMix"].vertex_group_a = group.name
+    target.modifiers["Cloth"].settings.vertex_group_mass = group.name
 
 
 # Region in which the random garment will be generated (units: m)
@@ -46,14 +72,14 @@ bpy.data.scenes['Scene'].node_tree.nodes["File Output exr"].base_path = folder
 
 ### Script starts to do stuff here ###
 
-for i in range(2):
+for i in range(100):
     # 1. Randomly place the cloth (within a [x,y,z] region)
     bpy.data.objects['Cloth'].bound_box.data.location[0] = uniform(x_max, x_min)
     bpy.data.objects['Cloth'].bound_box.data.location[1] = uniform(y_max, y_min)
     bpy.data.objects['Cloth'].bound_box.data.location[2] = uniform(z_max, z_min)
 
     # 2. Select (randomly) a vertex for pinning
-
+    set_random_pinning_point(cloth)
 
     # 3. Simulate dynamics
     bpy.ops.ptcache.bake_all(bake=True)
