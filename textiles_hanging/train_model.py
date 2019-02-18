@@ -5,6 +5,7 @@ import begin
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from keras import backend as K
 from keras.models import Sequential
 from keras.layers.core import Flatten, Dense, Dropout
@@ -91,14 +92,39 @@ def main(training_data: 'npz file containing training data',
 
     # data: shuffled and split between train and test sets
     with np.load(os.path.abspath(os.path.expanduser(training_data))) as data:
-        X = data['X'][:, np.newaxis, :, :]
+        X = data['X']
         Y = data['Y'][:, 1, :].reshape((-1, 3))
     logging.info('Loaded training examples (X): {}'.format(X.shape))
     logging.info('Loaded labels (Y): {}'.format(Y.shape))
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
-    K.set_image_dim_ordering("th")
 
-    # Normalization / scaling goes here ToDo
+    # Scaling. As the input is a depth map, to apply scaling we need to unravel all the data
+    # as if there was only one feature (depth)
+    scaler_X = StandardScaler()
+    X_shape = X.shape
+    X_1 = np.reshape(X, (X_shape[0], X_shape[1]*X_shape[2]))
+    X_2 = np.reshape(X_1, (X_1.shape[0]*X_1.shape[1], 1))
+    X_scaled = scaler_X.fit_transform(X_2)
+    X_scaled_1 = np.reshape(X_scaled, X_1.shape)
+    X_scaled_original_shape = np.reshape(X_scaled_1, X_shape)
+    # store these off for predictions with unseen data
+    X_means = scaler_X.mean_
+    X_stds = scaler_X.scale_
+    np.savez('X_scaling.npz', X_means=X_means, X_stds=X_stds)
+
+    if scale_output:
+        scaler_Y = StandardScaler()
+        Y_scaled = scaler_Y.fit_transform(Y)
+        # store these off for predictions with unseen data
+        Y_means = scaler_Y.mean_
+        Y_stds = scaler_Y.scale_
+        np.savez('Y_scaling.npz', Y_means=Y_means, Y_stds=Y_stds)
+    else:
+        Y_scaled = Y
+
+    # Train / test split
+    X_scaled = X_scaled_original_shape[:, np.newaxis, :, :]
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, Y_scaled, test_size=0.2)
+    K.set_image_dim_ordering("th")
 
     # Test pretrained model
     model = VGG_16()
