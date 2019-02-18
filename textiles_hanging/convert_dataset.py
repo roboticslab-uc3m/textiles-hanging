@@ -57,20 +57,20 @@ def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Outp
     logging.debug(csv_files)
 
     # Reserve memory for all the images to be loaded
-    X = np.zeros((240, 320, len(exr_files)))
-    Y = np.zeros((2, 3, len(exr_files)))
+    X = np.zeros((len(exr_files), 240, 320))
+    Y = np.zeros((len(exr_files), 2, 3))
 
     # Load images
     for i, (exr_file, csv_file) in tqdm(enumerate(zip(exr_files, csv_files))):
         # Load exr file
-        X[:, :, i] = numpy_from_exr(os.path.join(in_folder, exr_file))
+        X[i, :, :] = numpy_from_exr(os.path.join(in_folder, exr_file))
 
         # Load csv file
         reader = csv.reader(open(os.path.join(in_folder, csv_file), "r"), delimiter=" ")
         trajectory_data = list(reader)
         trajectory = np.array(trajectory_data).astype("float")
-        Y[0, :, i] = trajectory[4]
-        Y[1, :, i] = trajectory[-1]
+        Y[i, 0, :] = trajectory[4]
+        Y[i, 1, :] = trajectory[-1]
 
     # Save files
     np.savez_compressed(os.path.join(out_folder, 'data.npz'), X=X, Y=Y)
