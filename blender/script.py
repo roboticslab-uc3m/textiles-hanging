@@ -10,10 +10,10 @@
 
 import bpy
 import os
-from random import uniform
+import argparse
+from random import uniform, choice
 
-debug = False
-output_path = './'
+debug = True
 
 def compute_com(mesh):
     """
@@ -29,11 +29,6 @@ def delete_empties():
     for name, empty in filter(lambda x: 'Empty' in x[0], bpy.data.objects.items()):
         empty.select = True
     bpy.ops.object.delete()
-    
-import bpy
-from random import choice
-
-cloth = bpy.data.objects['Cloth']
 
 def delete_vertex_groups(target):
     bpy.data.scenes['Scene'].objects.active = target
@@ -41,6 +36,7 @@ def delete_vertex_groups(target):
 
 def create_vertex_groups(target):
     bpy.data.scenes['Scene'].objects.active = target
+    bpy.data.scenes['Scene'].tool_settings.vertex_group_weight = 1
     bpy.ops.object.mode_set(mode = 'EDIT')
     bpy.ops.mesh.select_mode(type='VERT')
     bpy.ops.mesh.select_all(action='DESELECT')
@@ -51,12 +47,37 @@ def create_vertex_groups(target):
         bpy.ops.object.vertex_group_add()
         bpy.ops.object.vertex_group_assign()
         bpy.ops.mesh.select_all(action='DESELECT')
+    bpy.ops.object.mode_set(mode='OBJECT')
         
 def set_random_pinning_point(target):
     group = choice(target.vertex_groups)
     target.modifiers["VertexWeightMix"].vertex_group_a = group.name
     target.modifiers["Cloth"].settings.vertex_group_mass = group.name
 
+
+# Get script args
+try:
+    parser = argparse.ArgumentParser()
+
+    _, all_arguments = parser.parse_known_args()
+    double_dash_index = all_arguments.index('--')
+    script_args = all_arguments[double_dash_index+1:]
+except ValueError:
+    print("Some error happened. Using default values")
+    start = 0
+    number = 2
+    output_path = './'
+else:
+    parser.add_argument('-s', '--start', help='starting index')
+    parser.add_argument('-n', '--number', help='number of trials')
+    parser.add_argument('-o', '--outdir', help='output directory')
+    parsed_script_args, _ = parser.parse_known_args(script_args)
+
+    start = int(parsed_script_args.start)
+    number = int(parsed_script_args.number)
+    output_path = parsed_script_args.outdir
+
+cloth = bpy.data.objects['Cloth']
 
 # Region in which the random garment will be generated (units: m)
 x_min, x_max = -0.30, 0.30
@@ -72,7 +93,7 @@ bpy.data.scenes['Scene'].node_tree.nodes["File Output exr"].base_path = folder
 
 ### Script starts to do stuff here ###
 
-for i in range(100):
+for i in range(start, start+number):
     # 1. Randomly place the cloth (within a [x,y,z] region)
     bpy.data.objects['Cloth'].bound_box.data.location[0] = uniform(x_max, x_min)
     bpy.data.objects['Cloth'].bound_box.data.location[1] = uniform(y_max, y_min)
