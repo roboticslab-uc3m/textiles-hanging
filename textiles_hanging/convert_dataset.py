@@ -68,26 +68,26 @@ def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Outp
         except ImportError:
             logging.error("Scikit-image cannot be found. Please install it (pip install scikit-image)")
             exit(1)
-        X = np.zeros((180, 240, len(exr_files)))
-        Y = np.zeros((2, 3, len(exr_files)))
+        X = np.zeros((len(exr_files), 180, 240))
+        Y = np.zeros((len(exr_files), 2, 3))
     else:
-        X = np.zeros((240, 320, len(exr_files)))
-        Y = np.zeros((2, 3, len(exr_files)))
+        X = np.zeros((len(exr_files), 240, 320))
+        Y = np.zeros((len(exr_files), 2, 3))
 
     # Load images
     for i, (exr_file, csv_file) in tqdm(enumerate(zip(exr_files, csv_files)), total=len(exr_files)):
         # Load exr file
         if resize:
-            X[:, :, i] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (180, 240), anti_aliasing=True)
+            X[:i, :, :] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (180, 240), anti_aliasing=True)
         else:
-             X[:, :, i] = numpy_from_exr(os.path.join(in_folder, exr_file))
+             X[i, :, :] = numpy_from_exr(os.path.join(in_folder, exr_file))
 
         # Load csv file
         reader = csv.reader(open(os.path.join(in_folder, csv_file), "r"), delimiter=" ")
         trajectory_data = list(reader)
         trajectory = np.array(trajectory_data).astype("float")
-        Y[0, :, i] = trajectory[4]
-        Y[1, :, i] = trajectory[-1]
+        Y[i, 0, :] = trajectory[4]
+        Y[i, 1, :] = trajectory[-1]
 
     # Save files
     np.savez_compressed(os.path.join(out_folder, 'data{}.npz'.format('-resized' if resize else '')), X=X, Y=Y)
