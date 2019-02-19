@@ -71,7 +71,7 @@ def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Outp
         try:
             from skimage.transform import resize
         except ImportError:
-            logging.error("Skimage cannot be found. Please install it (pip install skimage)")
+            logging.error("Scikit-image cannot be found. Please install it (pip install scikit-image)")
             exit(1)
         if ordering == 'th':
             X = np.zeros((len(exr_files), 180, 240))
@@ -90,11 +90,16 @@ def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Outp
     # Load images
     for i, (exr_file, csv_file) in tqdm(enumerate(zip(exr_files, csv_files)), total=len(exr_files)):
         # Load exr file
-        if ordering == 'th':
-            X[i, :, :] = numpy_from_exr(os.path.join(in_folder, exr_file))
+        if scale:
+            if ordering == 'th':
+                X[i, :, :] = resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (180, 240), anti_aliasing=True)
+            else:
+                X[:, :, i] = resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (180, 240), anti_aliasing=True)
         else:
-            X[:, :, i] = numpy_from_exr(os.path.join(in_folder, exr_file))
-
+            if ordering == 'th':
+                X[i, :, :] = numpy_from_exr(os.path.join(in_folder, exr_file))
+            else:
+                X[:, :, i] = numpy_from_exr(os.path.join(in_folder, exr_file))
 
         # Load csv file
         reader = csv.reader(open(os.path.join(in_folder, csv_file), "r"), delimiter=" ")
@@ -108,7 +113,8 @@ def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Outp
             Y[1, :, i] = trajectory[-1]
 
     # Save files
-    np.savez_compressed(os.path.join(out_folder, 'data-{}.npz'.format(ordering)), X=X, Y=Y)
+    np.savez_compressed(os.path.join(out_folder, 'data-{}{}.npz'.format(ordering,
+                                                                        '-scaled' if scale else '')), X=X, Y=Y)
 
 
 
