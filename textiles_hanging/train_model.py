@@ -17,35 +17,36 @@ from keras.optimizers import SGD, RMSprop, Adam
 def HANGnet(weights_path=None):
     model = Sequential()
     model.add(ZeroPadding2D((1, 1), input_shape=(180, 240, 1)))
-    model.add(Conv2D(16, (5, 5), activation='relu'))
+    model.add(Conv2D(12, (5, 5), activation='relu'))
+    model.add(Dropout(0.5))
     model.add(ZeroPadding2D((1, 1)))
 
-    model.add(Conv2D(32, (3, 3), activation='relu'))
+    model.add(Conv2D(12, (3, 3), activation='relu'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    model.add(Dropout(0.5))
+    model.add(ZeroPadding2D((1, 1)))
+
+    model.add(Conv2D(16, (3, 3), activation='relu'))
+    model.add(ZeroPadding2D((1, 1)))
+
+    model.add(Conv2D(16, (3, 3), activation='relu'))
     model.add(MaxPooling2D((2, 2), strides=(2, 2)))
     model.add(Dropout(0.5))
     model.add(ZeroPadding2D((1, 1)))
 
     model.add(Conv2D(32, (3, 3), activation='relu'))
     model.add(ZeroPadding2D((1, 1)))
-
-    model.add(Conv2D(48, (3, 3), activation='relu'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-    model.add(Dropout(0.5))
-    model.add(ZeroPadding2D((1, 1)))
-
-    model.add(Conv2D(48, (3, 3), activation='relu'))
-    model.add(ZeroPadding2D((1, 1)))
     model.add(Dropout(0.5))
 
-    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(Conv2D(40, (3, 3), activation='relu'))
     model.add(MaxPooling2D((2, 2), strides=(2, 2)))
     model.add(Dropout(0.5))
 
     model.add(Flatten())
     #top layer of the VGG net
-    model.add(Dense(16, activation='relu'))
-    model.add(Dropout(0.5))
     model.add(Dense(32, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(16, activation='relu'))
     model.add(Dropout(0.5))
     model.add(Dense(3, activation='linear'))
 
@@ -78,7 +79,7 @@ def main(training_data: 'npz file containing training data',
 
     INPUT_SHAPE = (240, 320, 1)  # This seems to be a reminder, as it is not used later
 
-    # data: shuffled and split between train and test sets
+    # Data is loaded here
     with np.load(os.path.abspath(os.path.expanduser(training_data))) as data:
         X = data['X']
         Y = data['Y'][:, 1, :].reshape((-1, 3))
@@ -110,9 +111,8 @@ def main(training_data: 'npz file containing training data',
         Y_scaled = Y
 
     # Train / test split
-    X_scaled = X_scaled_original_shape[:, np.newaxis, :, :]
+    X_scaled = X_scaled_original_shape[:, :, :, np.newaxis]
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, Y_scaled, test_size=0.2)
-    K.set_image_dim_ordering("tf")
 
     # Test pretrained model
     model = HANGnet()
