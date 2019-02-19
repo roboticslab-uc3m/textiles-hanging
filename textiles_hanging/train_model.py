@@ -117,16 +117,16 @@ def main(training_data: 'npz file containing training data',
     # Test pretrained model
     model = HANGnet()
 
-    print(model.summary())
-    exit(0)
+    logging.debug(model.summary())
 
     model.compile(loss="mse", optimizer=optimizer, metrics=["accuracy", "mse"])
 
     history = model.fit(X_train, y_train, batch_size=batch_size, epochs=n_epoch,
                         verbose=VERBOSE, validation_split=validation_split)
+    model.save_weights('hangnet-weights.h5')
 
     score = model.evaluate(X_test, y_test, verbose=VERBOSE)
-    logging.info("\nTest score:", score[0])
+    logging.info("Test score:", score[0])
     logging.info('Test accuracy:', score[1])
 
     # list all data in history
