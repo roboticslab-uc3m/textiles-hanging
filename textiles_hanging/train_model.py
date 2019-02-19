@@ -13,7 +13,7 @@ from keras.layers.convolutional import Conv2D, MaxPooling2D, ZeroPadding2D
 from keras.optimizers import SGD, RMSprop, Adam
 
 
-# define a VGG16 network
+# define a HANGnet network
 def HANGnet(weights_path=None):
     model = Sequential()
     model.add(ZeroPadding2D((1, 1), input_shape=(180, 240, 1)))
