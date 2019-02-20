@@ -126,8 +126,8 @@ def main(training_data: 'npz file containing training data',
     model.save_weights('hangnet-weights.h5')
 
     score = model.evaluate(X_test, y_test, verbose=VERBOSE)
-    logging.info("Test score:", score[0])
-    logging.info('Test accuracy:', score[1])
+    logging.info("Test score: {}".format(score[0]))
+    logging.info('Test accuracy:'.format(score[1]))
 
     # list all data in history
     logging.info(history.history.keys())
