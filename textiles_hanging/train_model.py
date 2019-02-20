@@ -59,6 +59,7 @@ def HANGnet(weights_path=None):
 @begin.start(auto_convert=True)
 @begin.logging
 def main(training_data: 'npz file containing training data',
+         do_not_train: 'If present, exits after summary'=False,
          scale_output: 'Scale the output for training'=True,
          n_epoch=20, batch_size=128, optimizer: 'Optimizer to be used [adam, sgd, rmsprop]'='adam',
          validation_split=0.2):
@@ -118,6 +119,8 @@ def main(training_data: 'npz file containing training data',
     model = HANGnet()
 
     logging.debug(model.summary())
+    if do_not_train:
+        exit(0)
 
     model.compile(loss="mse", optimizer=optimizer, metrics=["accuracy", "mse"])
 
