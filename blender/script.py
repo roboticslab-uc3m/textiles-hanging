@@ -80,9 +80,9 @@ else:
 cloth = bpy.data.objects['Cloth']
 
 # Region in which the random garment will be generated (units: m)
-x_min, x_max = -0.30, 0.30
-y_min, y_max = -0.70, 0.70
-z_min, z_max = 1.3, 1.5
+x_min, x_max = -0.01, 0.01
+y_min, y_max = -0.40, 0.40
+z_min, z_max = 1.5, 1.7
 
 hanging_frame = 40
 final_frame = 120
