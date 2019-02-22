@@ -20,6 +20,17 @@ def visualize_depth_with_background(img):
     plt.imshow(np.where(img == histogram[-1], histogram[-2], img), cmap=plt.cm.RdGy)
     plt.show()
 
+
+def visualize_depth_with_truncated_background(img, show=True, title=None):
+    img_truncated = np.where(img >= 10, 10, img)  # Crop infinity to 10m (for data scaling)
+    plt.figure()
+    plt.imshow(img_truncated, cmap=plt.cm.RdGy)
+    if title:
+        plt.title(title)
+    if show:
+        plt.show()
+
+
 def visualize_3D_scatterplot(data, show=True):
     """
     Shows a 3D scatterplot of the input data
@@ -51,4 +62,10 @@ def main(training_data: 'npz file containing training data'):
     n_hanged = counts[np.argsort(unique)[1]]
     logging.info("\t- Hanged: {}/{} - {}%".format(n_hanged, Y.shape[0], n_hanged/Y.shape[0]*100))
 
-    visualize_3D_scatterplot(Y)
+    visualize_3D_scatterplot(Y, show=False)
+
+    for i in range(5):
+        random_index = np.random.randint(0, X.shape[0])
+        visualize_depth_with_truncated_background(X[random_index, :, :], show=False, title=random_index)
+
+    plt.show()
