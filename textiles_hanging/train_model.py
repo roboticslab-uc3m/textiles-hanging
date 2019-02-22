@@ -5,7 +5,6 @@ import pickle
 import begin
 import numpy as np
 import matplotlib as mpl
-mpl.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -31,6 +30,7 @@ def HANGnet(weights_path=None):
 
     model.add(Conv2D(32, (3, 3), activation='relu'))
     model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    model.add(Dropout(0.5))
 
     model.add(ZeroPadding2D((1, 1)))
     model.add(Conv2D(16, (3, 3), activation='relu'))
@@ -41,11 +41,13 @@ def HANGnet(weights_path=None):
 
     model.add(Conv2D(32, (3, 3), activation='relu'))
     model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    model.add(Dropout(0.5))
 
 
     model.add(Flatten())
     #top layer of the VGG net
     model.add(Dense(500, activation='elu'))
+    model.add(Dropout(0.5))
     model.add(Dense(3, activation='elu'))
 
     if weights_path:
@@ -62,6 +64,8 @@ def main(training_data: 'npz file containing training data',
          scale_output: 'Scale the output for training'=True,
          n_epoch=20, batch_size=128, optimizer: 'Optimizer to be used [adam, sgd, rmsprop]'='adam',
          validation_split=0.2):
+
+    mpl.use('Agg')  # Plot without X
 
     logging.info("Current configuration: ")
     logging.info("Number of epochs: {}".format(n_epoch))
@@ -98,8 +102,8 @@ def main(training_data: 'npz file containing training data',
     X_scaled_1 = np.reshape(X_scaled, X_1.shape)
     X_scaled_original_shape = np.reshape(X_scaled_1, X_shape)
     # store these off for predictions with unseen data
-    X_means = scaler_X.mean_  # Not now
-    X_stds = scaler_X.scale_  # Not now
+    X_means = scaler_X.mean_
+    X_stds = scaler_X.scale_
     np.savez('X_scaling.npz', X_means=X_means, X_stds=X_stds) # Not now
 
     if scale_output:
@@ -114,7 +118,6 @@ def main(training_data: 'npz file containing training data',
 
     # Train / test split
     X_scaled = X_scaled_original_shape[:, :, :, np.newaxis]
-    #X_scaled = X[:, :, :, np.newaxis]
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, Y_scaled, test_size=0.2)
 
     # Test pretrained model
@@ -129,22 +132,20 @@ def main(training_data: 'npz file containing training data',
                                                                                               n_epoch,
                                                                                               batch_size))))
     tensorboard = TensorBoard(log_dir=full_log_dir)
-    model.compile(loss="mse", optimizer=optimizer, metrics=["mae", "mse"])
+    model.compile(loss="mse", optimizer=optimizer, metrics=["mse", "mae"])
 
     history = model.fit(X_train, y_train, batch_size=batch_size, epochs=n_epoch,
-                        verbose=VERBOSE, validation_data=(X_test, y_test) ) #, validation_split=validation_split)
+                        verbose=VERBOSE, validation_split=validation_split, callbacks=[tensorboard])
     model.save_weights('hangnet-weights.h5')
     with open('hangnet-history.pickle', 'wb') as f:
         pickle.dump(history.history, f)
 
     score = model.evaluate(X_test, y_test, verbose=VERBOSE)
-    logging.info("Test score: {}".format(score[0]))
-    logging.info('Test accuracy:'.format(score[1]))
+    logging.info("Test score:")
+    for metric, s in zip(model.metrics_names, score):
+        logging.info("\t- {}: {}".format(metric, s))
 
-    # list all data in history
-    logging.info(history.history.keys())
-
-    # summarize history for loss
+    # Plot loss to a file for feedback
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
     plt.title('model loss')
