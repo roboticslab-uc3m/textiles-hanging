@@ -22,21 +22,6 @@ def numpy_from_exr(filepath):
     return img
 
 
-def visualize_depth_with_background(img):
-    import matplotlib.pyplot as plt
-    logging.getLogger("matplotlib").setLevel(logging.WARNING)
-
-    unique, counts = np.unique(img, return_counts=True)
-    histogram_ind = np.argsort(unique)
-    histogram = unique[histogram_ind]
-    logging.debug(histogram)
-    logging.debug(histogram[-1])
-    logging.debug(histogram[-2])
-
-    plt.imshow(np.where(img == histogram[-1], histogram[-2], img), cmap=plt.cm.RdGy)
-    plt.show()
-
-
 @begin.start(auto_convert=True)
 @begin.logging
 def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Output folder for the npz file'='.',
