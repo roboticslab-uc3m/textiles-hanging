@@ -127,7 +127,7 @@ def main(training_data: 'npz file containing training data',
     if do_not_train:
         exit(0)
 
-    log_dir_name = os.path.splitext(os.path.basename(training_data))
+    log_dir_name = os.path.splitext(os.path.basename(training_data))[0]
     full_log_dir = os.path.abspath(os.path.expanduser(os.path.join(log_dir, "{}_{}_{}".format(log_dir_name,
                                                                                               n_epoch,
                                                                                               batch_size))))
