@@ -63,9 +63,9 @@ def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Outp
     for i, (exr_file, csv_file) in tqdm(enumerate(zip(exr_files, csv_files)), total=len(exr_files)):
         # Load exr file
         if resize:
-            X[:i, :, :] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (180, 240), anti_aliasing=True)
+            X[i, :, :] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (180, 240), anti_aliasing=True)
         else:
-             X[i, :, :] = numpy_from_exr(os.path.join(in_folder, exr_file))
+            X[i, :, :] = numpy_from_exr(os.path.join(in_folder, exr_file))
 
         # Load csv file
         reader = csv.reader(open(os.path.join(in_folder, csv_file), "r"), delimiter=" ")
