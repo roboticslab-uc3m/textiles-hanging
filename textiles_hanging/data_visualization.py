@@ -36,11 +36,19 @@ def visualize_3D_scatterplot(data, show=True):
 @begin.start(auto_convert=True)
 @begin.logging
 def main(training_data: 'npz file containing training data'):
+    logging.info("Using dataset: {}".format(training_data))
+
     # Data is loaded here
     with np.load(os.path.abspath(os.path.expanduser(training_data))) as data:
         X = data['X']
         Y = data['Y'][:, 1, :].reshape((-1, 3))
     logging.info('Loaded training examples (X): {}'.format(X.shape))
     logging.info('Loaded labels (Y): {}'.format(Y.shape))
+
+    logging.info("Analysis:")
+    # Compute classes:
+    unique, counts = np.unique(Y[:, 2] > 0.2, return_counts=True)
+    n_hanged = counts[np.argsort(unique)[1]]
+    logging.info("\t- Hanged: {}/{} - {}%".format(n_hanged, Y.shape[0], n_hanged/Y.shape[0]*100))
 
     visualize_3D_scatterplot(Y)
