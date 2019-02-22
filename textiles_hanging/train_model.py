@@ -11,10 +11,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from keras import backend as K
 from keras.models import Sequential
-
 from keras.layers.core import Flatten, Dense, Dropout
 from keras.layers.convolutional import Conv2D, MaxPooling2D, ZeroPadding2D
 from keras.optimizers import SGD, RMSprop, Adam
+from keras.callbacks import TensorBoard
 
 
 # define a HANGnet network
@@ -57,6 +57,7 @@ def HANGnet(weights_path=None):
 @begin.start(auto_convert=True)
 @begin.logging
 def main(training_data: 'npz file containing training data',
+         log_dir: 'TensorBoard logs go here'='./logs',
          do_not_train: 'If present, exits after summary'=False,
          scale_output: 'Scale the output for training'=True,
          n_epoch=20, batch_size=128, optimizer: 'Optimizer to be used [adam, sgd, rmsprop]'='adam',
@@ -123,10 +124,15 @@ def main(training_data: 'npz file containing training data',
     if do_not_train:
         exit(0)
 
+    log_dir_name = os.path.splitext(os.path.basename(training_data))
+    full_log_dir = os.path.abspath(os.path.expanduser(os.path.join(log_dir, "{}_{}_{}".format(log_dir_name,
+                                                                                              n_epoch,
+                                                                                              batch_size))))
+    tensorboard = TensorBoard(log_dir=full_log_dir)
     model.compile(loss="mse", optimizer=optimizer, metrics=["mae", "mse"])
 
     history = model.fit(X_train, y_train, batch_size=batch_size, epochs=n_epoch,
-                        verbose=VERBOSE, validation_data = (X_test, y_test) ) #, validation_split=validation_split)
+                        verbose=VERBOSE, validation_data=(X_test, y_test) ) #, validation_split=validation_split)
     model.save_weights('hangnet-weights.h5')
     with open('hangnet-history.pickle', 'wb') as f:
         pickle.dump(history.history, f)
