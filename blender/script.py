@@ -14,7 +14,7 @@ import os
 import argparse
 from random import uniform, choice
 
-debug = True
+debug = False
 
 def compute_com(mesh):
     """
@@ -97,10 +97,10 @@ cloth = bpy.data.objects['Cloth']
 # Region in which the random garment will be generated (units: m)
 x_min, x_max = -0.01, 0.01
 y_min, y_max = -0.40, 0.40
-z_min, z_max = 1.5, 1.7
+z_min, z_max = 1.3, 1.7
 
-hanging_frame = 40
-final_frame = 120
+hanging_frame = 200
+final_frame = 250
 bpy.data.scenes['Scene'].frame_current = 0
 folder = os.path.abspath(output_path)
 bpy.data.scenes['Scene'].node_tree.nodes["File Output png"].base_path = folder
