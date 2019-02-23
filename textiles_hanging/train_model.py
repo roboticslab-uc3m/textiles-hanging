@@ -92,7 +92,7 @@ def main(training_data: 'npz file containing training data',
             exit(0)
 
         for batch_size in batch_sizes:
-            for opt_name, opt_generator:
+            for opt_name, opt_generator in optimizers_with_name:
                 optimizer = opt_generator()
                 full_log_dir = os.path.abspath(os.path.expanduser(os.path.join(log_dir,
                                                                                "{}_{}_{}_{}".format(model_name,
