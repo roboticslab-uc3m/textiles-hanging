@@ -9,52 +9,16 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from keras import backend as K
-from keras.models import Sequential
-from keras.layers.core import Flatten, Dense, Dropout
-from keras.layers.convolutional import Conv2D, MaxPooling2D, ZeroPadding2D
 from keras.optimizers import SGD, RMSprop, Adam
 from keras.callbacks import TensorBoard
 
+from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large
 
-# define a HANGnet network
-def HANGnet(weights_path=None):
-    model = Sequential()
-    model.add(ZeroPadding2D((1, 1), input_shape=(180, 240, 1)))
+models_with_name = [('HANGnet', HANGnet), ('HANGnet_dropout', HANGnet_dropout), ('HANGnet_shallow', HANGnet_shallow),
+                    ('HANGnet_large', HANGnet_large)]
 
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Conv2D(16, (3, 3), activation='relu'))
-
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Conv2D(16, (3, 3), activation='relu'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(Conv2D(32, (3, 3), activation='relu'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-    model.add(Dropout(0.5))
-
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Conv2D(16, (3, 3), activation='relu'))
-
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Conv2D(16, (3, 3), activation='relu'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(Conv2D(32, (3, 3), activation='relu'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-    model.add(Dropout(0.5))
-
-
-    model.add(Flatten())
-    #top layer of the VGG net
-    model.add(Dense(500, activation='elu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(3, activation='elu'))
-
-    if weights_path:
-        model.load_weights(weights_path)
-
-    return model
-
+optimizers_with_name = [('adam', Adam), ('sgd', SGD), ('rmsprop', RMSprop)]
+batch_sizes = [32, 64, 128]
 
 @begin.start(auto_convert=True)
 @begin.logging
@@ -120,36 +84,45 @@ def main(training_data: 'npz file containing training data',
     X_scaled = X_scaled_original_shape[:, :, :, np.newaxis]
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, Y_scaled, test_size=0.2)
 
-    # Test pretrained model
-    model = HANGnet()
+    for model_name, model_generator in models_with_name:
+        model = model_generator()
 
-    logging.debug(model.summary())
-    if do_not_train:
-        exit(0)
+        logging.debug(model.summary())
+        if do_not_train:
+            exit(0)
 
-    log_dir_name = os.path.splitext(os.path.basename(training_data))[0]
-    full_log_dir = os.path.abspath(os.path.expanduser(os.path.join(log_dir, "{}_{}_{}".format(log_dir_name,
-                                                                                              n_epoch,
-                                                                                              batch_size))))
-    tensorboard = TensorBoard(log_dir=full_log_dir)
-    model.compile(loss="mse", optimizer=optimizer, metrics=["mse", "mae"])
+        for batch_size in batch_sizes:
+            for opt_name, opt_generator:
+                optimizer = opt_generator()
+                full_log_dir = os.path.abspath(os.path.expanduser(os.path.join(log_dir,
+                                                                               "{}_{}_{}_{}".format(model_name,
+                                                                                                    n_epoch,
+                                                                                                    batch_size,
+                                                                                                    opt_name))))
+                tensorboard = TensorBoard(log_dir=full_log_dir)
+                model.compile(loss="mse", optimizer=optimizer, metrics=["mse", "mae"])
 
-    history = model.fit(X_train, y_train, batch_size=batch_size, epochs=n_epoch,
-                        verbose=VERBOSE, validation_split=validation_split, callbacks=[tensorboard])
-    model.save_weights('hangnet-weights.h5')
-    with open('hangnet-history.pickle', 'wb') as f:
-        pickle.dump(history.history, f)
+                history = model.fit(X_train, y_train, batch_size=batch_size, epochs=n_epoch,
+                                    verbose=VERBOSE, validation_split=validation_split, callbacks=[tensorboard])
+                model.save_weights('hangnet-weights_{}_{}_{}_{}.h5'.format(model_name, n_epoch, batch_size, opt_name))
+                with open('hangnet-history_{}_{}_{}_{}.pickle'.format(model_name, n_epoch, batch_size, opt_name),
+                          'wb') as f:
+                    pickle.dump(history.history, f)
 
-    score = model.evaluate(X_test, y_test, verbose=VERBOSE)
-    logging.info("Test score:")
-    for metric, s in zip(model.metrics_names, score):
-        logging.info("\t- {}: {}".format(metric, s))
+                score = model.evaluate(X_test, y_test, verbose=VERBOSE)
+                logging.info("Test score:")
+                for metric, s in zip(model.metrics_names, score):
+                    logging.info("\t- {}: {}".format(metric, s))
 
-    # Plot loss to a file for feedback
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.savefig("loss_val_loss.png")
+                with open('hangnet-score_{}_{}_{}_{}.pickle'.format(model_name, n_epoch, batch_size, opt_name),
+                          'wb') as f:
+                    pickle.dump(score, f)
+
+                # Plot loss to a file for feedback
+                plt.plot(history.history['loss'])
+                plt.plot(history.history['val_loss'])
+                plt.title('model loss')
+                plt.ylabel('loss')
+                plt.xlabel('epoch')
+                plt.legend(['train', 'test'], loc='upper left')
+                plt.savefig("loss_val_loss_{}_{}_{}_{}.png".format(model_name, n_epoch, batch_size, opt_name))
