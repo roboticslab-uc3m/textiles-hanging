@@ -9,6 +9,7 @@
 #####################################
 
 import bpy
+from mathutils import Matrix
 import os
 import argparse
 from random import uniform, choice
@@ -53,7 +54,21 @@ def set_random_pinning_point(target):
     group = choice(target.vertex_groups)
     target.modifiers["VertexWeightMix"].vertex_group_a = group.name
     target.modifiers["Cloth"].settings.vertex_group_mass = group.name
+    
+def get_pinning_point(target):
+    group = target.modifiers["Cloth"].settings.vertex_group_mass 
+    index = target.vertex_groups[group].index
+    for i, v in enumerate(target.data.vertices):
+        for g in v.groups:
+            if g.group == index:
+                return i
+    return -1
 
+def center_in_vertex(vertex_ind, target):
+    v = target.data.vertices[vertex_ind]
+    v_in_world_frame = target.matrix_world*v.co
+    t = Matrix.Translation(v_in_world_frame)
+    cloth.bound_box.data.location += t.inverted().to_translation()
 
 # Get script args
 try:
@@ -94,13 +109,15 @@ bpy.data.scenes['Scene'].node_tree.nodes["File Output exr"].base_path = folder
 ### Script starts to do stuff here ###
 
 for i in range(start, start+number):
-    # 1. Randomly place the cloth (within a [x,y,z] region)
-    bpy.data.objects['Cloth'].bound_box.data.location[0] = uniform(x_max, x_min)
-    bpy.data.objects['Cloth'].bound_box.data.location[1] = uniform(y_max, y_min)
-    bpy.data.objects['Cloth'].bound_box.data.location[2] = uniform(z_max, z_min)
-
-    # 2. Select (randomly) a vertex for pinning
+    # 1. Select (randomly) a vertex for pinning
     set_random_pinning_point(cloth)
+
+    # 1. Randomly place the cloth (within a [x,y,z] region)
+    center_in_vertex(get_pinning_point(cloth), cloth)
+    bpy.data.objects['Cloth'].bound_box.data.location[0] += uniform(x_max, x_min)
+    bpy.data.objects['Cloth'].bound_box.data.location[1] += uniform(y_max, y_min)
+    bpy.data.objects['Cloth'].bound_box.data.location[2] += uniform(z_max, z_min)
+
 
     # 3. Simulate dynamics
     bpy.ops.ptcache.bake_all(bake=True)
