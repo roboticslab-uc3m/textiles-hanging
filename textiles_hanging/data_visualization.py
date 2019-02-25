@@ -44,9 +44,33 @@ def visualize_3D_scatterplot(data, show=True):
         plt.show()
 
 
+def visualize_3D_trajectories(data, show=True):
+    """
+    Shows the different trajectories of the input data
+    :param data: Vector of 3D trajectories [dims -> (n, m, 3), n: n samples, m: traj length]
+    :param show: Shows the figure if True
+    """
+    logging.debug(data.shape)
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    for traj in data:
+        color = 'b'
+        if traj[-1, 2] < 0.12:
+            color = 'r'
+            continue
+        elif traj[-1, 2] > 0.81:
+            color = 'g'
+            continue
+        ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], '-{}'.format(color), linewidth=1)
+    if show:
+        plt.show()
+
+
 @begin.start(auto_convert=True)
 @begin.logging
-def main(training_data: 'npz file containing training data'):
+def main(training_data: 'npz file containing training data',
+         view_inputs: 'show 5 random input examples'=False,
+         full_trajs: 'npz file containing full trajectories'=None):
     logging.info("Using dataset: {}".format(training_data))
 
     # Data is loaded here
@@ -56,16 +80,43 @@ def main(training_data: 'npz file containing training data'):
     logging.info('Loaded training examples (X): {}'.format(X.shape))
     logging.info('Loaded labels (Y): {}'.format(Y.shape))
 
+    if full_trajs:
+        with np.load(os.path.abspath(os.path.expanduser(full_trajs))) as data:
+            Y_full = data['Y']
+        logging.info('Loaded full trajectories (Y_full): {}'.format(Y_full.shape))
+
     logging.info("Analysis:")
     # Compute classes:
     unique, counts = np.unique(Y[:, 2] > 0.2, return_counts=True)
     n_hanged = counts[np.argsort(unique)[1]]
-    logging.info("\t- Hanged: {}/{} - {}%".format(n_hanged, Y.shape[0], n_hanged/Y.shape[0]*100))
+    logging.info("\t- Hanged (naive): {}/{} - {}%".format(n_hanged, Y.shape[0], n_hanged/Y.shape[0]*100))
+
+    unique, counts = np.unique(Y[:, 2] < 0.12, return_counts=True)
+    n_floor = counts[np.argsort(unique)[1]]
+    logging.info("\t- Hanged (floor): {}/{} - {}%".format(n_floor, Y.shape[0], n_floor / Y.shape[0] * 100))
+    unique, counts = np.unique((Y[:, 2] >= 0.12) & (Y[:, 2] < 0.81), return_counts=True)
+    n_midair = counts[np.argsort(unique)[1]]
+    logging.info("\t- Hanged (midair): {}/{} - {}%".format(n_midair, Y.shape[0], n_midair / Y.shape[0] * 100))
+    unique, counts = np.unique(Y[:, 2] >= 0.81, return_counts=True)
+    n_true_hanged = counts[np.argsort(unique)[1]]
+    logging.info("\t- Hanged (true): {}/{} - {}%".format(n_true_hanged, Y.shape[0], n_true_hanged / Y.shape[0] * 100))
 
     visualize_3D_scatterplot(Y, show=False)
 
-    for i in range(5):
-        random_index = np.random.randint(0, X.shape[0])
-        visualize_depth_with_truncated_background(X[random_index, :, :], show=False, title=random_index)
+    if view_inputs:
+        for i in range(5):
+            random_index = np.random.randint(0, X.shape[0])
+            visualize_depth_with_truncated_background(X[random_index, :, :], show=False, title=random_index)
 
+    if full_trajs:
+        plt.figure('Trajectories')
+        for traj in Y_full:
+            color = 'b'
+            if traj[-1, 2] < 0.12:
+                color='r'
+            elif traj[-1, 2] > 0.81:
+                color='g'
+            plt.plot(range(traj.shape[0]), traj[:, 2], '-{}'.format(color))
+
+        visualize_3D_trajectories(Y_full, show=False)
     plt.show()
