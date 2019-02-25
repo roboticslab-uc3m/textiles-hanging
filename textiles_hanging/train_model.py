@@ -12,13 +12,13 @@ from keras import backend as K
 from keras.optimizers import SGD, RMSprop, Adam
 from keras.callbacks import TensorBoard
 
-from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large
+from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HANGnet_very_large
 
-models_with_name = [('HANGnet', HANGnet), ('HANGnet_dropout', HANGnet_dropout), ('HANGnet_shallow', HANGnet_shallow),
-                    ('HANGnet_large', HANGnet_large)]
+models_with_name = [('HANGnet', HANGnet)]
 
 optimizers_with_name = [('adam', Adam), ('sgd', SGD), ('rmsprop', RMSprop)]
 batch_sizes = [32, 64, 128]
+
 
 @begin.start(auto_convert=True)
 @begin.logging
@@ -119,6 +119,7 @@ def main(training_data: 'npz file containing training data',
                     pickle.dump(score, f)
 
                 # Plot loss to a file for feedback
+                plt.figure()
                 plt.plot(history.history['loss'])
                 plt.plot(history.history['val_loss'])
                 plt.title('model loss')

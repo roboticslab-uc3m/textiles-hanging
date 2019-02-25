@@ -10,6 +10,7 @@ def work(cmd):
     logging.debug(cmd)
     return subprocess.call(cmd)
 
+
 @begin.start(auto_convert=True)
 @begin.logging
 def main(out_dir='./', start=0, number_per_job=1, total=5):
