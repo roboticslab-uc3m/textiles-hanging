@@ -4,8 +4,13 @@ import csv
 
 import begin
 from tqdm import tqdm
-import OpenEXR
-import Imath
+try:
+    import OpenEXR
+    import Imath
+except ImportError:
+    logging.error("This program requires OpenEXR. Please install system-wide package (sudo apt install libopenexr-dev) and")
+    logging.error("then install Python bindings with pip")
+    exit(1)
 import numpy as np
 
 # Inspiration: https://gist.github.com/jadarve/de3815874d062f72eaf230a7df41771b
