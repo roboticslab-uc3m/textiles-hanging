@@ -6,6 +6,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+try:
+    from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HANGnet_very_large
+
+    models_with_name = [('HANGnet', HANGnet), ('HANGnet_dropout', HANGnet_dropout),
+                        ('HANGnet_shallow', HANGnet_shallow),
+                        ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
+except ImportError as e:
+    logging.error("Could not load models. Result prediction will be disabled")
+    logging.error(str(e))
+from sklearn.preprocessing import StandardScaler
+
+
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
 
@@ -70,7 +82,12 @@ def visualize_3D_trajectories(data, show=True):
 @begin.logging
 def main(training_data: 'npz file containing training data',
          view_inputs: 'show 5 random input examples'=False,
-         full_trajs: 'npz file containing full trajectories'=None):
+         full_trajs: 'npz file containing full trajectories'=None,
+         view_results: 'Show a visualization of the predicted vs real'=False,
+         model_name: 'Name of the model to use for prediction'=None,
+         model_weights: 'File with the weights to load for prediction'=None,
+         x_scaling: 'File with the scaling used for X in training'=None,
+         y_scaling: 'File with the scaling used for Y in training'=None):
     logging.info("Using dataset: {}".format(training_data))
 
     # Data is loaded here
@@ -104,11 +121,13 @@ def main(training_data: 'npz file containing training data',
     visualize_3D_scatterplot(Y, show=False)
 
     if view_inputs:
+        logging.info("Showing input samples...")
         for i in range(5):
             random_index = np.random.randint(0, X.shape[0])
             visualize_depth_with_truncated_background(X[random_index, :, :], show=False, title=random_index)
 
     if full_trajs:
+        logging.info("Showing input trajectories...")
         plt.figure('Trajectories')
         for traj in Y_full:
             color = 'b'
@@ -120,3 +139,44 @@ def main(training_data: 'npz file containing training data',
 
         visualize_3D_trajectories(Y_full, show=False)
     plt.show()
+
+    if view_results:
+        logging.info("Showing results...")
+        try:
+            model = models_with_name[model_name](model_weights)
+        except NameError:
+            logging.error("Model cannot be loaded. Missing model? Missing Tensorflow/Keras?")
+            exit(2)
+
+        # Select data
+        indices = np.random.choice(range(X.shape[0]), 500, replace=False)
+        X_test = np.take(X, indices, axis=0)
+        X_test = X_test[:, :, :, np.newaxis]
+        Y_test = np.take(Y, indices, axis=0)
+
+        # Convert data to normalized values (or use normalized data instead)
+        # To do this, you'll need the normalization matrices
+        with np.load(os.path.abspath(os.path.expanduser(x_scaling))) as data:
+            X_means = data['X_means']
+            X_stds = data['X_stds']
+        scaler_X = StandardScaler()
+        scaler_X.set_params(mean=X_means, scale=X_stds)
+        scaler_X.transform(X_test)
+
+        with np.load(os.path.abspath(os.path.expanduser(y_scaling))) as data:
+            Y_means = data['Y_means']
+            Y_stds = data['Y_stds']
+        scaler_Y = StandardScaler()
+        scaler_Y.set_params(mean=Y_means, scale=Y_stds)
+        # Do not scale Y, we need to revert the scaling of the predicted output instead
+
+        # Predict and revert output to original scale
+        Y_pred = model.predict(X_test)
+        scaler_Y.inverse_transform(Y_pred)
+
+        # Plot predictions with actual data
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+        ax.scatter(Y_test[:, 0], Y_test[:, 1], Y_test[:, 2], s=1, c='g', marker='o')
+        ax.scatter(Y_pred[:, 0], Y_pred[:, 1], Y_pred[:, 2], s=1, c='r', marker='o')
+        plt.show()
