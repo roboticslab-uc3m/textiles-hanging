@@ -52,6 +52,16 @@ def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Outp
     img_prefix, img_ext = 'img-', '.exr'
     exr_files = [f for f in os.listdir(in_folder) if img_prefix in f and img_ext in f]
     csv_files = [f[:f.find('.')]+'.csv' for f in exr_files]
+    error = False
+    for f in csv_files:
+        if f not in os.listdir(in_folder):
+            logging.error("File {} not found".format(f))
+            error = True
+    if error:
+        logging.error("Some files are missing. Run the following command to delete them: ")
+        logging.error("rm {}".format(" ".join([f[:f.find('.')]+'.*' for f in csv_files if f not in os.listdir(in_folder)]))) 
+    
+        
     logging.info("{} files found.".format(len(exr_files)))
     logging.debug(exr_files)
     logging.debug(csv_files)
