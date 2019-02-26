@@ -1,6 +1,7 @@
 import logging
 import os
 import pickle
+from time import time
 
 import begin
 import numpy as np
@@ -17,7 +18,7 @@ from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HAN
 models_with_name = [('HANGnet', HANGnet), ('HANGnet_dropout', HANGnet_dropout), ('HANGnet_shallow', HANGnet_shallow),
                     ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
 
-optimizers_with_name = [('adam', Adam)] #, ('sgd', SGD), ('rmsprop', RMSprop)]
+optimizers_with_name = [('adam', Adam)]  #, ('sgd', SGD), ('rmsprop', RMSprop)]
 batch_sizes = [32]
 
 
@@ -69,7 +70,8 @@ def main(training_data: 'npz file containing training data',
     # store these off for predictions with unseen data
     X_means = scaler_X.mean_
     X_stds = scaler_X.scale_
-    np.savez('X_scaling.npz', X_means=X_means, X_stds=X_stds) # Not now
+    np.savez('X_scaling_{}_{}_{}.npz'.format(time(), n_epoch, batch_size)
+             , X_means=X_means, X_stds=X_stds) # Not now
 
     if scale_output:
         scaler_Y = StandardScaler()
@@ -77,7 +79,8 @@ def main(training_data: 'npz file containing training data',
         # store these off for predictions with unseen data
         Y_means = scaler_Y.mean_
         Y_stds = scaler_Y.scale_
-        np.savez('Y_scaling.npz', Y_means=Y_means, Y_stds=Y_stds)
+        np.savez('Y_scaling_{}_{}_{}.npz'.format(time(), n_epoch, batch_size),
+                 Y_means=Y_means, Y_stds=Y_stds)
     else:
         Y_scaled = Y
 
