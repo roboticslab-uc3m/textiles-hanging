@@ -9,9 +9,9 @@ from mpl_toolkits.mplot3d import Axes3D
 try:
     from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HANGnet_very_large
 
-    models_with_name = [('HANGnet', HANGnet), ('HANGnet_dropout', HANGnet_dropout),
-                        ('HANGnet_shallow', HANGnet_shallow),
-                        ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
+    models_with_name = {'HANGnet': HANGnet, 'HANGnet_dropout': HANGnet_dropout,
+                        'HANGnet_shallow': HANGnet_shallow,
+                        'HANGnet_large': HANGnet_large, 'HANGnet_very_large': HANGnet_very_large}
 except ImportError as e:
     logging.error("Could not load models. Result prediction will be disabled")
     logging.error(str(e))
@@ -138,12 +138,12 @@ def main(training_data: 'npz file containing training data',
             plt.plot(range(traj.shape[0]), traj[:, 2], '-{}'.format(color))
 
         visualize_3D_trajectories(Y_full, show=False)
-    plt.show()
+    #plt.show()
 
     if view_results:
         logging.info("Showing results...")
         try:
-            model = models_with_name[model_name](model_weights)
+            model = models_with_name[model_name](os.path.abspath(os.path.expanduser(model_weights)))
         except NameError:
             logging.error("Model cannot be loaded. Missing model? Missing Tensorflow/Keras?")
             exit(2)
@@ -159,20 +159,16 @@ def main(training_data: 'npz file containing training data',
         with np.load(os.path.abspath(os.path.expanduser(x_scaling))) as data:
             X_means = data['X_means']
             X_stds = data['X_stds']
-        scaler_X = StandardScaler()
-        scaler_X.set_params(mean=X_means, scale=X_stds)
-        scaler_X.transform(X_test)
+        X_test = (X_test-X_means)/X_stds
 
         with np.load(os.path.abspath(os.path.expanduser(y_scaling))) as data:
             Y_means = data['Y_means']
             Y_stds = data['Y_stds']
-        scaler_Y = StandardScaler()
-        scaler_Y.set_params(mean=Y_means, scale=Y_stds)
         # Do not scale Y, we need to revert the scaling of the predicted output instead
 
         # Predict and revert output to original scale
         Y_pred = model.predict(X_test)
-        scaler_Y.inverse_transform(Y_pred)
+        Y_pred = (Y_pred*Y_stds)+Y_means
 
         # Plot predictions with actual data
         fig = plt.figure()
