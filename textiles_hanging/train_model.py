@@ -14,7 +14,8 @@ from keras.callbacks import TensorBoard
 
 from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HANGnet_very_large
 
-models_with_name = [('HANGnet', HANGnet)]
+models_with_name = [('HANGnet', HANGnet), ('HANGnet_dropout', HANGnet_dropout), ('HANGnet_shallow', HANGnet_shallow),
+                    ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
 
 optimizers_with_name = [('adam', Adam)] #, ('sgd', SGD), ('rmsprop', RMSprop)]
 batch_sizes = [32]
