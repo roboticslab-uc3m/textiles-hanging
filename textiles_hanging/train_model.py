@@ -101,8 +101,7 @@ def main(training_data: 'npz file containing training data',
                                                                                                     batch_size,
                                                                                                     opt_name))))
                 tensorboard = TensorBoard(log_dir=full_log_dir, write_graph=False,
-                                          histogram_freq=5, batch_size=batch_size, write_grads=True,
-                                          write_images=True)
+                                          histogram_freq=5, batch_size=batch_size, write_grads=True)
                 model.compile(loss="mse", optimizer=optimizer, metrics=["mse", "mae"])
 
                 history = model.fit(X_train, y_train, batch_size=batch_size, epochs=n_epoch,
