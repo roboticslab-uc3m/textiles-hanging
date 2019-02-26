@@ -16,8 +16,8 @@ from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HAN
 
 models_with_name = [('HANGnet', HANGnet)]
 
-optimizers_with_name = [('adam', Adam), ('sgd', SGD), ('rmsprop', RMSprop)]
-batch_sizes = [32, 64, 128]
+optimizers_with_name = [('adam', Adam)] #, ('sgd', SGD), ('rmsprop', RMSprop)]
+batch_sizes = [32]
 
 
 @begin.start(auto_convert=True)
@@ -99,7 +99,9 @@ def main(training_data: 'npz file containing training data',
                                                                                                     n_epoch,
                                                                                                     batch_size,
                                                                                                     opt_name))))
-                tensorboard = TensorBoard(log_dir=full_log_dir)
+                tensorboard = TensorBoard(log_dir=full_log_dir, write_graph=False,
+                                          histogram_freq=5, batch_size=batch_size, write_grads=True,
+                                          write_images=True)
                 model.compile(loss="mse", optimizer=optimizer, metrics=["mse", "mae"])
 
                 history = model.fit(X_train, y_train, batch_size=batch_size, epochs=n_epoch,
