@@ -65,7 +65,6 @@ def HANGnet_dropout(weights_path=None):
     model.add(MaxPooling2D((2, 2), strides=(2, 2)))
     model.add(Dropout(0.5))
 
-
     model.add(Flatten())
     model.add(Dense(500, activation='relu'))
     model.add(Dropout(0.5))

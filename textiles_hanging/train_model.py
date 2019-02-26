@@ -88,6 +88,7 @@ def main(training_data: 'npz file containing training data',
     for model_name, model_generator in models_with_name:
         model = model_generator()
 
+        logging.info("Training model: {}".format(model_name))
         logging.debug(model.summary())
         if do_not_train:
             exit(0)
