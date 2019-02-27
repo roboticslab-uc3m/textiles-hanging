@@ -13,11 +13,11 @@ from keras.optimizers import SGD, RMSprop, Adam
 from keras.callbacks import TensorBoard
 from keras.models import Sequential
 from keras.layers.core import Flatten, Dense, Dropout
-from keras.applications import VGG16
+from keras.applications import VGG16, vgg16
 
 
 def HANGnet_VGG(weights_path=None):
-    vgg =  VGG16(weights='imagenet', include_top=False, input_shape=(image_size, image_size, 3))
+    vgg =  VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
     for layer in vgg.layers[:-4]:
         layer.trainable = False
 
@@ -74,7 +74,7 @@ def main(training_data: 'npz file containing training data',
     # Scaling. As the input is a depth map, to apply scaling we need to unravel all the data
     # as if there was only one feature (depth)
     logging.info("Scaling input features (X)...")
-    X_scaled = VGG16.preprocess_input(X.copy())
+    X_scaled = vgg16.preprocess_input(X.copy())
 
     if scale_output:
         logging.info("Scaling output features (Y)...")
