@@ -24,9 +24,9 @@ def main(in_file: 'Input npz file containing the dataset'='.', out_folder: 'Outp
         Y = data['Y']
 
     if imagenet_size:
-        X = np.zeros((len(X_old.shape[0]), 224, 224, 3))
+        X = np.zeros(X_old.shape[0], 224, 224, 3)
     else:
-        X = np.zeros((len(X_old.shape[0]), 224, 224))
+        X = np.zeros(X_old.shape[0], 224, 224)
 
     # Resize images
     for i in tqdm(range(X_old.shape[0]), total=X_old.shape[0]):
