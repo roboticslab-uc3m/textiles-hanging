@@ -63,7 +63,7 @@ def main(training_data: 'npz file containing training data',
     X_shape = X.shape
     X_1 = np.reshape(X, (X_shape[0], X_shape[1]*X_shape[2]))
     X_2 = np.reshape(X_1, (X_1.shape[0]*X_1.shape[1], 1))
-    X_3 = np.where(X_2 >= 10, 10, X_2)  # Crop infinity to 10m (for data scaling)
+    X_3 = np.where(X_2 >= 2, 2, X_2)  # Crop infinity to 10m (for data scaling)
     X_scaled = scaler_X.fit_transform(X_3)
     X_scaled_1 = np.reshape(X_scaled, X_1.shape)
     X_scaled_original_shape = np.reshape(X_scaled_1, X_shape)
