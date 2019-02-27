@@ -31,7 +31,7 @@ def main(in_file: 'Input npz file containing the dataset'='.', out_folder: 'Outp
     # Resize images
     for i in tqdm(range(X_old.shape[0]), total=X_old.shape[0]):
         if imagenet_size:
-            X[i, :, :, 0] = sk_resize(X_old[i, :, :], (224, 299), anti_aliasing=True)[:, 37:262]
+            X[i, :, :, 0] = sk_resize(X_old[i, :, :], (224, 299), anti_aliasing=True)[:, 37:261]
             X[i, :, :, 1] = X[i, :, :, 0]
             X[i, :, :, 2] = X[i, :, :, 0]
         else:
