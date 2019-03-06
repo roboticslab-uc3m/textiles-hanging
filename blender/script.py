@@ -16,6 +16,8 @@ from random import uniform, choice
 
 debug = False
 
+# Functions (that might be migrated to blender-utils package)
+
 def compute_com(mesh):
     """
     Computes the center of mass of a mesh assuming homogeneous vertex density
@@ -41,7 +43,7 @@ def create_vertex_groups(target):
     bpy.ops.object.mode_set(mode = 'EDIT')
     bpy.ops.mesh.select_mode(type='VERT')
     bpy.ops.mesh.select_all(action='DESELECT')
-    for i in range(len(target.data.vertices)):  # Not pythonic, but iterator seems not to work for this one
+    for i in range(len(target.data.vertices)):  # Not pythonic, but iterator doesn't seem to work for this one
         bpy.ops.object.mode_set(mode='OBJECT')
         target.data.vertices[i].select = True
         bpy.ops.object.mode_set(mode='EDIT')

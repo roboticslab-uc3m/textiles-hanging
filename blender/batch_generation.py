@@ -13,7 +13,15 @@ def work(cmd):
 
 @begin.start(auto_convert=True)
 @begin.logging
-def main(out_dir='./', start=0, number_per_job=1, total=5):
+def main(out_dir: 'Output directory where files will be written to'='./',
+         start: 'Index of the first element of the dataset to be generated'=0,
+         number_per_job: 'Number of elements to be generated'=1,
+         total: 'Number of consecutive jobs per Blender instance (to avoid RAM exaustion)'=5):
+    """
+    batch_generation.py
+    ------------------------
+    Multiprocess generation of training data via blender.
+    """
     count = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=count)
     tasks = map(lambda i: ['blender',

@@ -13,15 +13,23 @@ try:
                         'HANGnet_shallow': HANGnet_shallow,
                         'HANGnet_large': HANGnet_large, 'HANGnet_very_large': HANGnet_very_large}
 except ImportError as e:
+    models_with_name = {}
     logging.error("Could not load models. Result prediction will be disabled")
-    logging.error(str(e))
+    logging.error("Reason: {}".format(str(e)))
 from sklearn.preprocessing import StandardScaler
 
 
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
 
-def visualize_depth_with_background(img):
+def visualize_depth_with_background(img, show=True):
+    """
+    Visualize a depth image that has a nan as background, by substituting that value with the previous one in the
+    histogram. If the image background is composed of several close values, use visualize_depth_with_thresholded_background()
+    instead.
+    :param img: Image to visualize
+    :param: show: Shows the figure if True
+    """
     unique, counts = np.unique(img, return_counts=True)
     histogram_ind = np.argsort(unique)
     histogram = unique[histogram_ind]
@@ -30,11 +38,20 @@ def visualize_depth_with_background(img):
     logging.debug(histogram[-2])
 
     plt.imshow(np.where(img == histogram[-1], histogram[-2], img), cmap=plt.cm.RdGy)
-    plt.show()
+    if show:
+        plt.show()
 
 
-def visualize_depth_with_truncated_background(img, show=True, title=None):
-    img_truncated = np.where(img >= 10, 10, img)  # Crop infinity to 10m (for data scaling)
+def visualize_depth_with_thresholded_background(img, threshold=10, show=True, title=None):
+    """
+    Visualize a depth image that has several close values as background, by substituting values larger than the
+    threshold by the threshold value.
+    :param img: Image to visualize
+    :param threshold: Threshold to apply
+    :param show: Shows the figure if True
+    :param title: Title on the visualization window
+    """
+    img_truncated = np.where(img >= threshold, threshold, img)  # Crop infinity to 10m (for data scaling)
     plt.figure()
     plt.imshow(img_truncated, cmap=plt.cm.RdGy)
     if title:
@@ -59,20 +76,20 @@ def visualize_3D_scatterplot(data, show=True):
 def visualize_3D_trajectories(data, show=True):
     """
     Shows the different trajectories of the input data
-    :param data: Vector of 3D trajectories [dims -> (n, m, 3), n: n samples, m: traj length]
+    :param data: Vector of 3D trajectories [dims -> (n, m, 3), n: n samples, m: trajectory length]
     :param show: Shows the figure if True
     """
     logging.debug(data.shape)
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     for traj in data:
-        color = 'b'
+        color = 'b'  # Blue points are points on the floor
         if traj[-1, 2] < 0.12:
             color = 'r'
-            continue
+            continue  # Remove/comment this to show red points (still in movement)
         elif traj[-1, 2] > 0.81:
             color = 'g'
-            continue
+            continue  # Remove/comment this to show green points (hanged)
         ax.plot(traj[:, 0], traj[:, 1], traj[:, 2], '-{}'.format(color), linewidth=1)
     if show:
         plt.show()
@@ -84,10 +101,13 @@ def main(training_data: 'npz file containing training data',
          view_inputs: 'show 5 random input examples'=False,
          full_trajs: 'npz file containing full trajectories'=None,
          view_results: 'Show a visualization of the predicted vs real'=False,
-         model_name: 'Name of the model to use for prediction'=None,
+         model_name: 'Name of the model to use for prediction. Supported: []'.format(list(models_with_name.keys()))=None,
          model_weights: 'File with the weights to load for prediction'=None,
          x_scaling: 'File with the scaling used for X in training'=None,
          y_scaling: 'File with the scaling used for Y in training'=None):
+    """
+    Visualize different aspects from a given dataset. Each flag enables/disables the corresponding visualization.
+    """
     logging.info("Using dataset: {}".format(training_data))
 
     # Data is loaded here
@@ -124,7 +144,7 @@ def main(training_data: 'npz file containing training data',
         logging.info("Showing input samples...")
         for i in range(5):
             random_index = np.random.randint(0, X.shape[0])
-            visualize_depth_with_truncated_background(X[random_index, :, :], show=False, title=random_index)
+            visualize_depth_with_thresholded_background(X[random_index, :, :], show=False, title=random_index)
 
     if full_trajs:
         logging.info("Showing input trajectories...")
