@@ -47,7 +47,7 @@ class HangingDataGenerator(Sequence):
         return X, y
 
     def __len__(self):
-        return int(np.floor(len(self.data_files_id)/self.batch_size))
+        return int(np.floor(len(self.data_file_ids)/self.batch_size))
 
     def __getitem__(self, item):
         files_to_load = self.data_files_id[item*self.batch_size:(item+1)*self.batch_size]
