@@ -14,13 +14,12 @@ from convert_dataset import numpy_from_exr
 
 
 class HangingDataGenerator(Sequence):
-    def __init__(self, data_file_ids, data_folder='.', batch_size=32, dims=(180, 240), n_channels=1, resize=True,
+    def __init__(self, data_file_ids, data_folder='.', batch_size=32, dims=(180, 240), resize=True,
                  shuffle=True):
         self.data_file_ids = data_file_ids
         self.data_folder = data_folder
         self.batch_size = batch_size
         self.dims = dims
-        self.n_channels = n_channels
         self.resize = resize
         self.shuffle = shuffle
         self.on_epoch_end()
@@ -29,15 +28,15 @@ class HangingDataGenerator(Sequence):
         np.random.shuffle(self.data_file_ids)
 
     def _data_generation(self, files_to_load):
-        X = np.empty((self.batch_size, *self.dims, self.n_channels))
+        X = np.empty((self.batch_size, *self.dims, 1))
         y = np.empty((self.batch_size, 3))  # 3 -> x, y, z
 
         for i, file in enumerate(files_to_load):
             if self.resize:
-                X[i, :, :, :] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+'.exr0040.exr')), self.dims,
+                X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+'.exr0040.exr')), self.dims,
                                           anti_aliasing=True)
             else:
-                X[i, :, :, :] = numpy_from_exr(os.path.join(self.in_folder, file+'.exr0040.exr'))
+                X[i, :, :, 0] = numpy_from_exr(os.path.join(self.in_folder, file+'.exr0040.exr'))
 
             reader = csv.reader(open(os.path.join(self.in_folder, file+'.csv'), "r"), delimiter=" ")
             trajectory_data = list(reader)
@@ -58,12 +57,11 @@ class HangingDataGenerator(Sequence):
 class HangingImagenetDataGenerator(HangingDataGenerator):
     def __init__(self, data_file_ids, data_folder='.', batch_size=32, resize=True, shuffle=True):
         dims = (224, 224)
-        n_channels = 3
-        super(HangingImagenetDataGenerator, self).__init__(data_file_ids, data_folder, batch_size, dims, n_channels,
+        super(HangingImagenetDataGenerator, self).__init__(data_file_ids, data_folder, batch_size, dims,
                                                            resize, shuffle)
 
     def _data_generation(self, files_to_load):
-        X = np.empty((self.batch_size, *self.dims, self.n_channels))
+        X = np.empty((self.batch_size, *self.dims, 3))
         y = np.empty((self.batch_size, 3))  # 3 -> x, y, z
 
         for i, file in enumerate(files_to_load):
