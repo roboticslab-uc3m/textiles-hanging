@@ -13,7 +13,7 @@ except ImportError:
     exit(1)
 import numpy as np
 
-# Inspiration: https://gist.github.com/jadarve/de3815874d062f72eaf230a7df41771b
+from generators import get_dataset_filenames
 
 
 def numpy_from_exr(filepath):
@@ -57,22 +57,11 @@ def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Outp
     else:
         logging.info("Dumping full trajectories disabled. (Enable with --full-trajs)")
 
-    img_prefix, img_ext = 'img-', '.exr'
-    exr_files = [f for f in os.listdir(in_folder) if img_prefix in f and img_ext in f]
-    csv_files = [f[:f.find('.')]+'.csv' for f in exr_files]
-    error = False
-    for f in csv_files:
-        if f not in os.listdir(in_folder):
-            logging.error("File {} not found".format(f))
-            error = True
-    if error:
-        logging.error("Some files are missing. Run the following command to delete them: ")
-        logging.error("rm {}".format(" ".join([f[:f.find('.')]+'.*' for f in csv_files if f not in os.listdir(in_folder)]))) 
-    
-        
+
+    file_ids = get_dataset_filenames(in_folder)
+    exr_files = [f+'.exr0040.exr' for f in file_ids]
+    csv_files = [f+'.csv' for f in file_ids]
     logging.info("{} files found.".format(len(exr_files)))
-    logging.debug(exr_files)
-    logging.debug(csv_files)
 
     # Reserve memory for all the images to be loaded
     if resize:

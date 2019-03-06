@@ -1,0 +1,108 @@
+import os
+import logging
+import csv
+
+import numpy as np
+from keras.utils import Sequence
+try:
+    from skimage.transform import resize as sk_resize
+except ImportError:
+    logging.error("Scikit-image cannot be found. Please install it (pip install scikit-image)")
+    exit(1)
+
+from convert_dataset import numpy_from_exr
+
+
+def get_dataset_filenames(data_folder):
+    img_prefix, img_ext = 'img-', '.exr0040.exr'
+    exr_files = [f for f in os.listdir(data_folder) if img_prefix in f and img_ext in f]
+    files = [f[:f.find('.')] for f in exr_files]
+    csv_files = [f+'.csv' for f in files]
+    error = False
+    for f in csv_files:
+        if f not in os.listdir(data_folder):
+            logging.error("File {} not found".format(f))
+            error = True
+    if error:
+        logging.error("Some files are missing. Run the following command to delete them: ")
+        logging.error("rm {}".format(" ".join([f[:f.find('.')]+'.*' for f in csv_files
+                                               if f not in os.listdir(data_folder)])))
+        return None
+
+    logging.debug("{} files found.".format(len(files)))
+    logging.debug(files)
+    return files
+
+
+class HangingDataGenerator(Sequence):
+    def __init__(self, data_file_ids, data_folder='.', batch_size=32, dims=(180, 240), n_channels=1, resize=True,
+                 shuffle=True):
+        self.data_file_ids = data_file_ids
+        self.data_folder = data_folder
+        self.batch_size = batch_size
+        self.dims = dims
+        self.n_channels = n_channels
+        self.resize = resize
+        self.shuffle = shuffle
+        self.on_epoch_end()
+
+    def on_epoch_end(self):
+        np.random.shuffle(self.data_file_ids)
+
+    def _data_generation(self, files_to_load):
+        X = np.empty((self.batch_size, *self.dims, self.n_channels))
+        y = np.empty((self.batch_size, 3))  # 3 -> x, y, z
+
+        for i, file in enumerate(files_to_load):
+            if self.resize:
+                X[i, :, :, :] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+'.exr0040.exr')), self.dims,
+                                          anti_aliasing=True)
+            else:
+                X[i, :, :, :] = numpy_from_exr(os.path.join(self.in_folder, file+'.exr0040.exr'))
+
+            reader = csv.reader(open(os.path.join(self.in_folder, file+'.csv'), "r"), delimiter=" ")
+            trajectory_data = list(reader)
+            trajectory = np.array(trajectory_data).astype("float")
+            y[i, :] = trajectory[-1]
+
+        return X, y
+
+    def __len__(self):
+        return int(np.floor(len(self.data_files_id)/self.batch_size))
+
+    def __getitem__(self, item):
+        files_to_load = self.data_files_id[item*self.batch_size:(item+1)*self.batch_size]
+        X, y = self._data_generation(files_to_load)
+        return X, y
+
+
+class HangingImagenetDataGenerator(HangingDataGenerator):
+    def __init__(self, data_file_ids, data_folder='.', batch_size=32, resize=True, shuffle=True):
+        dims = (224, 224)
+        n_channels = 3
+        super(HangingImagenetDataGenerator, self).__init__(data_file_ids, data_folder, batch_size, dims, n_channels,
+                                                           resize, shuffle)
+
+    def _data_generation(self, files_to_load):
+        X = np.empty((self.batch_size, *self.dims, self.n_channels))
+        y = np.empty((self.batch_size, 3))  # 3 -> x, y, z
+
+        for i, file in enumerate(files_to_load):
+            if self.resize:
+                X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(self.in_folder, file+'exr0040.exr')), (224, 299),
+                                          anti_aliasing=True)[:, 37:262]
+                X[i, :, :, 1] = sk_resize(numpy_from_exr(os.path.join(self.in_folder, file+'exr0040.exr')), (224, 299),
+                                          anti_aliasing=True)[:, 37:262]
+                X[i, :, :, 2] = sk_resize(numpy_from_exr(os.path.join(self.in_folder, file+'exr0040.exr')), (224, 299),
+                                          anti_aliasing=True)[:, 37:262]
+            else:
+                X[i, :, :, 0] = numpy_from_exr(os.path.join(self.in_folder, file+'exr0040.exr'))
+                X[i, :, :, 1] = numpy_from_exr(os.path.join(self.in_folder, file+'exr0040.exr'))
+                X[i, :, :, 2] = numpy_from_exr(os.path.join(self.in_folder, file+'exr0040.exr'))
+
+            reader = csv.reader(open(os.path.join(self.in_folder, file+'.csv'), "r"), delimiter=" ")
+            trajectory_data = list(reader)
+            trajectory = np.array(trajectory_data).astype("float")
+            y[i, :] = trajectory[-1]
+
+        return X, y
