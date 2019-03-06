@@ -13,7 +13,26 @@ except ImportError:
     exit(1)
 import numpy as np
 
-from generators import get_dataset_filenames
+
+def get_dataset_filenames(data_folder):
+    img_prefix, img_ext = 'img-', '.exr0040.exr'
+    exr_files = [f for f in os.listdir(data_folder) if img_prefix in f and img_ext in f]
+    files = [f[:f.find('.')] for f in exr_files]
+    csv_files = [f+'.csv' for f in files]
+    error = False
+    for f in csv_files:
+        if f not in os.listdir(data_folder):
+            logging.error("File {} not found".format(f))
+            error = True
+    if error:
+        logging.error("Some files are missing. Run the following command to delete them: ")
+        logging.error("rm {}".format(" ".join([f[:f.find('.')]+'.*' for f in csv_files
+                                               if f not in os.listdir(data_folder)])))
+        return None
+
+    logging.debug("{} files found.".format(len(files)))
+    logging.debug(files)
+    return files
 
 
 def numpy_from_exr(filepath):
