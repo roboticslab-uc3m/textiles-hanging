@@ -53,8 +53,8 @@ def main(training_data_dir: 'folder containing training data',
     # Get ids of files to load
     dataset_files = get_dataset_filenames(training_data_dir)
     np.random.shuffle(dataset_files)
-    test_size = np.floor(0.2*len(dataset_files))
-    validation_size = np.floor(validation_split*(1-0.2)*len(dataset_files))
+    test_size = int(np.floor(0.2*len(dataset_files)))
+    validation_size = int(np.floor(validation_split*(1-0.2)*len(dataset_files)))
     test_files = dataset_files[:test_size+1]
     validation_files = dataset_files[test_size+1:test_size+1+validation_size+1]
     train_files = dataset_files[test_size+1:test_size+1+validation_size+1:]
