@@ -18,8 +18,8 @@ from keras.applications import VGG16, vgg16
 
 def HANGnet_VGG(weights_path=None):
     vgg =  VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
-    for layer in vgg.layers[:-4]:
-        layer.trainable = False
+    #for layer in vgg.layers[:-4]:
+    #    layer.trainable = False
 
     model = Sequential()
     model.add(vgg)
