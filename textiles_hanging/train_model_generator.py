@@ -55,9 +55,9 @@ def main(training_data_dir: 'folder containing training data',
     np.random.shuffle(dataset_files)
     test_size = int(np.floor(0.2*len(dataset_files)))
     validation_size = int(np.floor(validation_split*(1-0.2)*len(dataset_files)))
-    test_files = dataset_files[:test_size+1]
-    validation_files = dataset_files[test_size+1:test_size+1+validation_size+1]
-    train_files = dataset_files[test_size+1:test_size+1+validation_size+1:]
+    test_files = dataset_files[:test_size]
+    validation_files = dataset_files[test_size:test_size+validation_size]
+    train_files = dataset_files[test_size+validation_size:]
     logging.info("Training set: {} examples".format(len(train_files)))
     logging.info("Validation set: {} examples".format(len(validation_files)))
     logging.info("Test set: {} examples".format(len(test_files)))
