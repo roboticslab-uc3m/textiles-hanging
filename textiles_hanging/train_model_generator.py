@@ -89,8 +89,7 @@ def main(training_data_dir: 'folder containing training data',
                                                                                                     n_epoch,
                                                                                                     batch_size,
                                                                                                     opt_name))))
-                tensorboard = TensorBoard(log_dir=full_log_dir, write_graph=False,
-                                          histogram_freq=5, batch_size=batch_size, write_grads=True)
+                tensorboard = TensorBoard(log_dir=full_log_dir, write_graph=False)
                 model.compile(loss="mse", optimizer=optimizer, metrics=["mse", "mae"])
 
                 history = model.fit_generator(generator=training_generator, validation_data=validation_generator,
