@@ -58,6 +58,9 @@ def main(training_data_dir: 'folder containing training data',
     test_files = dataset_files[:test_size+1]
     validation_files = dataset_files[test_size+1:test_size+1+validation_size+1]
     train_files = dataset_files[test_size+1:test_size+1+validation_size+1:]
+    logging.info("Training set: {} examples".format(len(train_files)))
+    logging.info("Validation set: {} examples".format(len(validation_files)))
+    logging.info("Test set: {} examples".format(len(test_files)))
     with open('hangnet-test-files.pickle', 'wb') as f:
         pickle.dump(test_files, f)
     with open('hangnet-validation-files.pickle', 'wb') as f:
