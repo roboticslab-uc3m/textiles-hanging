@@ -95,6 +95,14 @@ def visualize_3D_trajectories(data, show=True):
         plt.show()
 
 
+def visualize_input_histogram(data, show=True):
+    logging.debug(data.shape)
+    fig = plt.figure()
+    plt.hist(data.ravel(), bins=50)
+    if show:
+        plt.show()
+
+
 @begin.start(auto_convert=True)
 @begin.logging
 def main(training_data: 'npz file containing training data',
@@ -145,6 +153,7 @@ def main(training_data: 'npz file containing training data',
         for i in range(5):
             random_index = np.random.randint(0, X.shape[0])
             visualize_depth_with_thresholded_background(X[random_index, :, :], show=False, title=random_index)
+            visualize_input_histogram(X[random_index, :, :], show=False)
 
     if full_trajs:
         logging.info("Showing input trajectories...")
@@ -158,7 +167,7 @@ def main(training_data: 'npz file containing training data',
             plt.plot(range(traj.shape[0]), traj[:, 2], '-{}'.format(color))
 
         visualize_3D_trajectories(Y_full, show=False)
-    #plt.show()
+    plt.show()
 
     if view_results:
         logging.info("Showing results...")
