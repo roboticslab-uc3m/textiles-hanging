@@ -58,6 +58,12 @@ def main(training_data_dir: 'folder containing training data',
     test_files = dataset_files[:test_size+1]
     validation_files = dataset_files[test_size+1:test_size+1+validation_size+1]
     train_files = dataset_files[test_size+1:test_size+1+validation_size+1:]
+    with open('hangnet-test-files.pickle', 'wb') as f:
+        pickle.dump(test_files, f)
+    with open('hangnet-validation-files.pickle', 'wb') as f:
+        pickle.dump(validation_files, f)
+    with open('hangnet-train-files.pickle', 'wb') as f:
+        pickle.dump(train_files, f)
 
     # Create generator
     params = {'batch_size': batch_size, 'resize': True,  'shuffle': True}
