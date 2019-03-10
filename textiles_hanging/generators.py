@@ -12,6 +12,7 @@ except ImportError:
 
 from convert_dataset import numpy_from_exr
 
+exr_filext = '.exr0200.exr'
 
 class HangingDataGenerator(Sequence):
     def __init__(self, data_file_ids, data_folder='.', batch_size=32, dims=(180, 240), resize=True,
@@ -35,10 +36,10 @@ class HangingDataGenerator(Sequence):
 
         for i, file in enumerate(files_to_load):
             if self.resize:
-                X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+'.exr0040.exr')), self.dims,
+                X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+exr_filext)), self.dims,
                                           anti_aliasing=True)
             else:
-                X[i, :, :, 0] = numpy_from_exr(os.path.join(self.data_folder, file+'.exr0040.exr'))
+                X[i, :, :, 0] = numpy_from_exr(os.path.join(self.data_folder, file+exr_filext))
 
             reader = csv.reader(open(os.path.join(self.data_folder, file+'.csv'), "r"), delimiter=" ")
             trajectory_data = list(reader)
@@ -75,16 +76,13 @@ class HangingImagenetDataGenerator(HangingDataGenerator):
 
         for i, file in enumerate(files_to_load):
             if self.resize:
-                X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+'exr0040.exr')), (224, 299),
-                                          anti_aliasing=True)[:, 37:262]
-                X[i, :, :, 1] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+'exr0040.exr')), (224, 299),
-                                          anti_aliasing=True)[:, 37:262]
-                X[i, :, :, 2] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+'exr0040.exr')), (224, 299),
+                X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+exr_filext)), (224, 299),
                                           anti_aliasing=True)[:, 37:262]
             else:
-                X[i, :, :, 0] = numpy_from_exr(os.path.join(self.data_folder, file+'exr0040.exr'))
-                X[i, :, :, 1] = numpy_from_exr(os.path.join(self.data_folder, file+'exr0040.exr'))
-                X[i, :, :, 2] = numpy_from_exr(os.path.join(self.data_folder, file+'exr0040.exr'))
+                X[i, :, :, 0] = numpy_from_exr(os.path.join(self.data_folder, file+exr_filext))
+
+            X[i, :, :, 1] = X[i, :, :, 0]
+            X[i, :, :, 2] = X[i, :, :, 0]
 
             reader = csv.reader(open(os.path.join(self.data_folder, file+'.csv'), "r"), delimiter=" ")
             trajectory_data = list(reader)
