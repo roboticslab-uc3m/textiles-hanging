@@ -15,12 +15,14 @@ from convert_dataset import numpy_from_exr
 
 class HangingDataGenerator(Sequence):
     def __init__(self, data_file_ids, data_folder='.', batch_size=32, dims=(180, 240), resize=True,
-                 shuffle=True):
+                 threshold=True, feature_scaling=True, shuffle=True):
         self.data_file_ids = data_file_ids
         self.data_folder = data_folder
         self.batch_size = batch_size
         self.dims = dims
         self.resize = resize
+        self.threshold = threshold
+        self.feature_scaling = feature_scaling
         self.shuffle = shuffle
         self.on_epoch_end()
 
@@ -28,7 +30,7 @@ class HangingDataGenerator(Sequence):
         np.random.shuffle(self.data_file_ids)
 
     def _data_generation(self, files_to_load):
-        X = np.empty((self.batch_size, *self.dims, 1))
+        X = np.empty((self.batch_size, self.dims[0], self.dims[1], 1))
         y = np.empty((self.batch_size, 3))  # 3 -> x, y, z
 
         for i, file in enumerate(files_to_load):
@@ -42,6 +44,13 @@ class HangingDataGenerator(Sequence):
             trajectory_data = list(reader)
             trajectory = np.array(trajectory_data).astype("float")
             y[i, :] = trajectory[-1]
+
+        if self.threshold:
+            thres = 2
+            X = np.where(X >= thres, thres, X)
+
+            if self.feature_scaling:
+                X = 2*X/thres-1
 
         return X, y
 
@@ -61,7 +70,7 @@ class HangingImagenetDataGenerator(HangingDataGenerator):
                                                            resize, shuffle)
 
     def _data_generation(self, files_to_load):
-        X = np.empty((self.batch_size, *self.dims, 3))
+        X = np.empty((self.batch_size, self.dims[0], self.dims[1], 3))
         y = np.empty((self.batch_size, 3))  # 3 -> x, y, z
 
         for i, file in enumerate(files_to_load):
@@ -81,5 +90,12 @@ class HangingImagenetDataGenerator(HangingDataGenerator):
             trajectory_data = list(reader)
             trajectory = np.array(trajectory_data).astype("float")
             y[i, :] = trajectory[-1]
+
+        if self.threshold:
+            thres = 2
+            X = np.where(X >= thres, thres, X)
+
+            if self.feature_scaling:
+                X = 2*X/thres-1
 
         return X, y
