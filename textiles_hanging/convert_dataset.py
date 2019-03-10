@@ -13,9 +13,10 @@ except ImportError:
     exit(1)
 import numpy as np
 
+exr_filext = '.exr0200.exr'
 
 def get_dataset_filenames(data_folder):
-    img_prefix, img_ext = 'img-', '.exr0040.exr'
+    img_prefix, img_ext = 'img-', exr_filext
     exr_files = [f for f in os.listdir(data_folder) if img_prefix in f and img_ext in f]
     files = [f[:f.find('.')] for f in exr_files]
     csv_files = [f+'.csv' for f in files]
@@ -78,7 +79,7 @@ def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Outp
 
 
     file_ids = get_dataset_filenames(in_folder)
-    exr_files = [f+'.exr0040.exr' for f in file_ids]
+    exr_files = [f+exr_filext for f in file_ids]
     csv_files = [f+'.csv' for f in file_ids]
     logging.info("{} files found.".format(len(exr_files)))
 
@@ -111,8 +112,8 @@ def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Outp
         if resize:
             if imagenet_size:
                 X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (224, 299), anti_aliasing=True)[:, 37:262]
-                X[i, :, :, 1] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (224, 299), anti_aliasing=True)[:, 37:262]
-                X[i, :, :, 2] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (224, 299), anti_aliasing=True)[:, 37:262]
+                X[i, :, :, 1] = X[i, :, :, 0]
+                X[i, :, :, 2] = X[i, :, :, 0]
             else:
                 X[i, :, :] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (180, 240), anti_aliasing=True)
         else:
