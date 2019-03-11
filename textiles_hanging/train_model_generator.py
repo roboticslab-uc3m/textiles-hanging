@@ -58,7 +58,7 @@ def main(training_data_dir: 'folder containing training data',
         dataset_files = get_dataset_filenames(training_data_dir)
         with open('hangnet-last-dataset-filenames.pickle', 'wb') as f:
             pickle.dump(dataset_files, f)
-            
+
     np.random.shuffle(dataset_files)
     test_size = int(np.floor(0.2*len(dataset_files)))
     validation_size = int(np.floor(validation_split*(1-0.2)*len(dataset_files)))
@@ -93,7 +93,7 @@ def main(training_data_dir: 'folder containing training data',
 
         for batch_size in batch_sizes:
             for opt_name, opt_generator in optimizers_with_name:
-                optimizer = opt_generator()
+                optimizer = opt_generator(lr=0.0001)
                 full_log_dir = os.path.abspath(os.path.expanduser(os.path.join(log_dir,
                                                                                "{}_{}_{}_{}".format(model_name,
                                                                                                     n_epoch,
