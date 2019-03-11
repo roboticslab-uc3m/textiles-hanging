@@ -37,7 +37,7 @@ class HangingDataGenerator(Sequence):
         for i, file in enumerate(files_to_load):
             if self.resize:
                 X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+exr_filext)), self.dims,
-                                          anti_aliasing=True)
+                                          anti_aliasing=True, mode='constant')
             else:
                 X[i, :, :, 0] = numpy_from_exr(os.path.join(self.data_folder, file+exr_filext))
 
@@ -77,7 +77,7 @@ class HangingImagenetDataGenerator(HangingDataGenerator):
         for i, file in enumerate(files_to_load):
             if self.resize:
                 X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+exr_filext)), (224, 299),
-                                          anti_aliasing=True)[:, 37:262]
+                                          anti_aliasing=True, mode='constant')[:, 37:262]
             else:
                 X[i, :, :, 0] = numpy_from_exr(os.path.join(self.data_folder, file+exr_filext))
 

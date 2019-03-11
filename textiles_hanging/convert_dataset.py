@@ -111,11 +111,13 @@ def main(in_folder: 'Input folder containing the dataset'='.', out_folder: 'Outp
         # Load exr file
         if resize:
             if imagenet_size:
-                X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (224, 299), anti_aliasing=True)[:, 37:262]
+                X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (224, 299),
+                                          anti_aliasing=True, mode='constant')[:, 37:262]
                 X[i, :, :, 1] = X[i, :, :, 0]
                 X[i, :, :, 2] = X[i, :, :, 0]
             else:
-                X[i, :, :] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (180, 240), anti_aliasing=True)
+                X[i, :, :] = sk_resize(numpy_from_exr(os.path.join(in_folder, exr_file)), (180, 240),
+                                       anti_aliasing=True, mode='constant')
         else:
             X[i, :, :] = numpy_from_exr(os.path.join(in_folder, exr_file))
 
