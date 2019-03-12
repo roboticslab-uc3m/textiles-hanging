@@ -7,8 +7,6 @@ import begin
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from keras import backend as K
 from keras.optimizers import SGD, RMSprop, Adam
 from keras.callbacks import TensorBoard
@@ -17,9 +15,9 @@ from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HAN
 from generators import HangingDataGenerator
 from convert_dataset import get_dataset_filenames
 
-models_with_name = [('HANGnet', HANGnet) ]
-#                    ('HANGnet_dropout', HANGnet_dropout), ('HANGnet_shallow', HANGnet_shallow),
-#                    ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
+models_with_name = [('HANGnet', HANGnet),
+                    ('HANGnet_dropout', HANGnet_dropout), ('HANGnet_shallow', HANGnet_shallow),
+                    ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
 
 optimizers_with_name = [('adam', Adam)]  #, ('sgd', SGD), ('rmsprop', RMSprop)]
 batch_sizes = [32]
