@@ -99,6 +99,8 @@ def main(training_data_dir: 'folder containing training data',
                                                                                                     batch_size,
                                                                                                     opt_name))))
                 full_result_dir = os.path.join(results_dir, model_name)
+                if not os.path.exists(full_result_dir):
+                    os.makedirs(full_result_dir)
                 weights_path = os.path.join(full_result_dir, 'hangnet-weights_{}_{}_{}_{}.h5'.format(model_name,
                                                                                                      n_epoch,
                                                                                                      batch_size,
