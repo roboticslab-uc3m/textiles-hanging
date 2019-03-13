@@ -15,12 +15,12 @@ from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HAN
 from generators import HangingDataGenerator
 from convert_dataset import get_dataset_filenames
 
-models_with_name = [('HANGnet', HANGnet),
-                    ('HANGnet_dropout', HANGnet_dropout), ('HANGnet_shallow', HANGnet_shallow),
-                    ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
+models_with_name = [#('HANGnet', HANGnet),
+                    ('HANGnet_dropout', HANGnet_dropout)]#, ('HANGnet_shallow', HANGnet_shallow),
+#                    ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
 
 optimizers_with_name = [('adam', Adam)]  #, ('sgd', SGD), ('rmsprop', RMSprop)]
-batch_sizes = [32]
+batch_sizes = [32, 64, 128]
 
 
 @begin.start(auto_convert=True)
@@ -130,7 +130,7 @@ def main(training_data_dir: 'folder containing training data',
 
                 # Evaluate and save results to files
                 model.save_weights(weights_path)
-                with open( history_path, 'wb') as f:
+                with open(history_path, 'wb') as f:
                     pickle.dump(history.history, f)
 
                 score = model.evaluate_generator(generator=test_generator, verbose=VERBOSE,
