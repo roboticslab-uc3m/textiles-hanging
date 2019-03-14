@@ -15,12 +15,17 @@ from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HAN
 from generators import HangingDataGenerator
 from convert_dataset import get_dataset_filenames
 
-models_with_name = [#('HANGnet', HANGnet),
-                    ('HANGnet_dropout', HANGnet_dropout)]#, ('HANGnet_shallow', HANGnet_shallow),
+models_with_name = [('HANGnet', HANGnet)] #,
+#                    ('HANGnet_dropout', HANGnet_dropout)]#, ('HANGnet_shallow', HANGnet_shallow),
 #                    ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
 
 optimizers_with_name = [('adam', Adam)]  #, ('sgd', SGD), ('rmsprop', RMSprop)]
-batch_sizes = [32, 64, 128]
+batch_sizes = [32]#, 64, 128]
+
+
+def custom_loss(y_true, y_pred):
+    squared_components = (y_true-y_pred)^2
+    return squared_components[0]+squared_components[1]+3*squared_components[2]
 
 
 @begin.start(auto_convert=True)
@@ -121,7 +126,7 @@ def main(training_data_dir: 'folder containing training data',
 
                 # Train model
                 optimizer = opt_generator(lr=0.0001)
-                model.compile(loss="mse", optimizer=optimizer, metrics=["mse", "mae"])
+                model.compile(loss=custom_loss, optimizer=optimizer, metrics=["mse"])
 
                 history = model.fit_generator(generator=training_generator, validation_data=validation_generator,
                                               use_multiprocessing=True, workers=6,
