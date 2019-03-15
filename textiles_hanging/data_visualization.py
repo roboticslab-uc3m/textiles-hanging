@@ -98,7 +98,7 @@ def visualize_3D_trajectories(data, show=True):
 def visualize_input_histogram(data, show=True):
     logging.debug(data.shape)
     fig = plt.figure()
-    plt.hist(data.ravel(), bins=50)
+    plt.hist(data[data <= 2].ravel(), bins=50)
     if show:
         plt.show()
 
@@ -167,7 +167,6 @@ def main(training_data: 'npz file containing training data',
             plt.plot(range(traj.shape[0]), traj[:, 2], '-{}'.format(color))
 
         visualize_3D_trajectories(Y_full, show=False)
-    plt.show()
 
     if view_results:
         logging.info("Showing results...")
@@ -183,25 +182,34 @@ def main(training_data: 'npz file containing training data',
         X_test = X_test[:, :, :, np.newaxis]
         Y_test = np.take(Y, indices, axis=0)
 
-        # Convert data to normalized values (or use normalized data instead)
-        # To do this, you'll need the normalization matrices
-        with np.load(os.path.abspath(os.path.expanduser(x_scaling))) as data:
-            X_means = data['X_means']
-            X_stds = data['X_stds']
-        X_test = (X_test-X_means)/X_stds
+        if x_scaling and y_scaling:
+            # Convert data to normalized values (or use normalized data instead)
+            # To do this, you'll need the normalization matrices
+            with np.load(os.path.abspath(os.path.expanduser(x_scaling))) as data:
+                X_means = data['X_means']
+                X_stds = data['X_stds']
+            X_test = (X_test-X_means)/X_stds
 
-        with np.load(os.path.abspath(os.path.expanduser(y_scaling))) as data:
-            Y_means = data['Y_means']
-            Y_stds = data['Y_stds']
-        # Do not scale Y, we need to revert the scaling of the predicted output instead
+            with np.load(os.path.abspath(os.path.expanduser(y_scaling))) as data:
+                Y_means = data['Y_means']
+                Y_stds = data['Y_stds']
+            # Do not scale Y, we need to revert the scaling of the predicted output instead
+
+        # New scaling
+        thres = 2
+        X_test = np.where(X_test >= thres, thres, X_test)
+        X_test = 2*X_test/thres-1
 
         # Predict and revert output to original scale
         Y_pred = model.predict(X_test)
-        Y_pred = (Y_pred*Y_stds)+Y_means
+        #Y_pred = (Y_pred*Y_stds)+Y_means
 
         # Plot predictions with actual data
         fig = plt.figure()
         ax = fig.gca(projection='3d')
-        ax.scatter(Y_test[:, 0], Y_test[:, 1], Y_test[:, 2], s=1, c='g', marker='o')
-        ax.scatter(Y_pred[:, 0], Y_pred[:, 1], Y_pred[:, 2], s=1, c='r', marker='o')
-        plt.show()
+        ax.scatter(Y_test[:, 0], Y_test[:, 1], Y_test[:, 2], s=1, c='g', marker='o', label='Ground Truth')
+        ax.scatter(Y_pred[:, 0], Y_pred[:, 1], Y_pred[:, 2], s=1, c='b', marker='o', label='Predicted')
+        #for start, end in zip(Y_test, Y_pred):
+        #    ax.plot([start[0], end[0]], [start[1], end[1]], [start[2], end[2]], 'r-', label='Error')
+
+    plt.show()
