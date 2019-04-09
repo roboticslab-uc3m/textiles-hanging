@@ -68,7 +68,22 @@ def visualize_3D_scatterplot(data, show=True):
     """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
+    ax.set_aspect('equal')
+
     ax.scatter(data[:, 0][:], data[:, 1][:], data[:, 2][:], s=1, c='r', marker='o')
+
+    X = data[:, 0][:]
+    Y = data[:, 1][:]
+    Z = data[:, 2][:]
+    max_range = np.array([X.max() - X.min(), Y.max() - Y.min(), Z.max() - Z.min()]).max() / 2.0
+
+    mid_x = (X.max() + X.min()) * 0.5
+    mid_y = (Y.max() + Y.min()) * 0.5
+    mid_z = (Z.max() + Z.min()) * 0.5
+    ax.set_xlim(mid_x - max_range, mid_x + max_range)
+    ax.set_ylim(mid_y - max_range, mid_y + max_range)
+    ax.set_zlim(mid_z - max_range, mid_z + max_range)
+
     if show:
         plt.show()
 
@@ -109,7 +124,7 @@ def main(training_data: 'npz file containing training data',
          view_inputs: 'show 5 random input examples'=False,
          full_trajs: 'npz file containing full trajectories'=None,
          view_results: 'Show a visualization of the predicted vs real'=False,
-         model_name: 'Name of the model to use for prediction. Supported: []'.format(list(models_with_name.keys()))=None,
+         model_name: 'Name of the model to use for prediction. Supported:{}'.format(list(models_with_name.keys()))=None,
          model_weights: 'File with the weights to load for prediction'=None,
          x_scaling: 'File with the scaling used for X in training'=None,
          y_scaling: 'File with the scaling used for Y in training'=None):
@@ -209,7 +224,7 @@ def main(training_data: 'npz file containing training data',
         ax = fig.gca(projection='3d')
         ax.scatter(Y_test[:, 0], Y_test[:, 1], Y_test[:, 2], s=1, c='g', marker='o', label='Ground Truth')
         ax.scatter(Y_pred[:, 0], Y_pred[:, 1], Y_pred[:, 2], s=1, c='b', marker='o', label='Predicted')
-        #for start, end in zip(Y_test, Y_pred):
-        #    ax.plot([start[0], end[0]], [start[1], end[1]], [start[2], end[2]], 'r-', label='Error')
+        for start, end in zip(Y_test, Y_pred):
+            ax.plot([start[0], end[0]], [start[1], end[1]], [start[2], end[2]], 'r-', label='Error')
 
     plt.show()

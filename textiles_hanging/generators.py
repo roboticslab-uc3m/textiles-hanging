@@ -16,7 +16,7 @@ exr_filext = '.exr0200.exr'
 
 class HangingDataGenerator(Sequence):
     def __init__(self, data_file_ids, data_folder='.', batch_size=32, dims=(180, 240), resize=True,
-                 threshold=True, feature_scaling=True, shuffle=True):
+                 threshold=True, feature_scaling=True, shuffle=True, full_trajectory=False):
         self.data_file_ids = data_file_ids
         self.data_folder = data_folder
         self.batch_size = batch_size
@@ -25,6 +25,7 @@ class HangingDataGenerator(Sequence):
         self.threshold = threshold
         self.feature_scaling = feature_scaling
         self.shuffle = shuffle
+        self.full_trajectory = full_trajectory
         self.on_epoch_end()
 
     def on_epoch_end(self):
@@ -32,7 +33,10 @@ class HangingDataGenerator(Sequence):
 
     def _data_generation(self, files_to_load):
         X = np.empty((self.batch_size, self.dims[0], self.dims[1], 1))
-        y = np.empty((self.batch_size, 3))  # 3 -> x, y, z
+        if not self.full_trajectory:
+            y = np.empty((self.batch_size, 3))  # 3 -> x, y, z
+        else:
+            y = np.empty((self.batch_size, 51, 3))  # 3->(x, y, z) 51->points in trajectory (might not work on old data)
 
         for i, file in enumerate(files_to_load):
             if self.resize:
@@ -44,7 +48,10 @@ class HangingDataGenerator(Sequence):
             reader = csv.reader(open(os.path.join(self.data_folder, file+'.csv'), "r"), delimiter=" ")
             trajectory_data = list(reader)
             trajectory = np.array(trajectory_data).astype("float")
-            y[i, :] = trajectory[-1]
+            if not self.full_trajectory:
+                y[i, :] = trajectory[-1]
+            else:
+                y[i, :, :] = trajectory
 
         if self.threshold:
             thres = 2
