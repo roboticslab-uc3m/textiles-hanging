@@ -12,7 +12,7 @@ from keras.optimizers import SGD, RMSprop, Adam
 from keras.callbacks import TensorBoard
 
 from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HANGnet_very_large, HANGnet_classify
-from generators import HangingDataGenerator
+from generators import HangingDataGenerator, HangingBinaryDataGenerator
 from convert_dataset import get_dataset_filenames
 
 models_with_name = [('HANGnet_classify', HANGnet_classify)]
@@ -84,9 +84,9 @@ def main(training_data_dir: 'folder containing training data',
     # Create data generator
     params = {'batch_size': batch_size, 'resize': True,  'shuffle': True}
 
-    training_generator = HangingDataGenerator(train_files, training_data_dir, **params)
-    validation_generator = HangingDataGenerator(validation_files, training_data_dir, **params)
-    test_generator = HangingDataGenerator(test_files, training_data_dir, **params)
+    training_generator = HangingBinaryDataGenerator(train_files, training_data_dir, **params)
+    validation_generator = HangingBinaryDataGenerator(validation_files, training_data_dir, **params)
+    test_generator = HangingBinaryDataGenerator(test_files, training_data_dir, **params)
 
     for model_name, model_generator in models_with_name:
         model = model_generator()
