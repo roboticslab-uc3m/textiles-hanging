@@ -70,6 +70,57 @@ class HangingDataGenerator(Sequence):
         X, y = self._data_generation(files_to_load)
         return X, y
 
+class HangingBinaryDataGenerator(Sequence):
+    def __init__(self, data_file_ids, data_folder='.', batch_size=32, dims=(180, 240), resize=True,
+                 threshold=True, feature_scaling=True, shuffle=True):
+        self.data_file_ids = data_file_ids
+        self.data_folder = data_folder
+        self.batch_size = batch_size
+        self.dims = dims
+        self.resize = resize
+        self.threshold = threshold
+        self.feature_scaling = feature_scaling
+        self.shuffle = shuffle
+        self.on_epoch_end()
+
+    def on_epoch_end(self):
+        np.random.shuffle(self.data_file_ids)
+
+    def _data_generation(self, files_to_load):
+        X = np.empty((self.batch_size, self.dims[0], self.dims[1], 1))
+        y = np.empty((self.batch_size, 1))
+
+        for i, file in enumerate(files_to_load):
+            if self.resize:
+                X[i, :, :, 0] = sk_resize(numpy_from_exr(os.path.join(self.data_folder, file+exr_filext)), self.dims,
+                                          anti_aliasing=True, mode='constant')
+            else:
+                X[i, :, :, 0] = numpy_from_exr(os.path.join(self.data_folder, file+exr_filext))
+
+            reader = csv.reader(open(os.path.join(self.data_folder, file+'.csv'), "r"), delimiter=" ")
+            trajectory_data = list(reader)
+            trajectory = np.array(trajectory_data).astype("float")
+            # The next threshold is naive, but better than t < 0.2, as some of the examples are still in midair but
+            # will fall down if more time is allowed
+            y[i, :] = trajectory[-1] < 0.81
+
+        if self.threshold:
+            thres = 2
+            X = np.where(X >= thres, thres, X)
+
+            if self.feature_scaling:
+                X = 2*X/thres-1
+
+        return X, y
+
+    def __len__(self):
+        return int(np.floor(len(self.data_file_ids)/self.batch_size))
+
+    def __getitem__(self, item):
+        files_to_load = self.data_file_ids[item*self.batch_size:(item+1)*self.batch_size]
+        X, y = self._data_generation(files_to_load)
+        return X, y
+
 
 class HangingImagenetDataGenerator(HangingDataGenerator):
     def __init__(self, data_file_ids, data_folder='.', batch_size=32, resize=True, shuffle=True):

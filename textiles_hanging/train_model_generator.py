@@ -11,11 +11,12 @@ from keras import backend as K
 from keras.optimizers import SGD, RMSprop, Adam
 from keras.callbacks import TensorBoard
 
-from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HANGnet_very_large
+from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HANGnet_very_large, HANGnet_classify
 from generators import HangingDataGenerator
 from convert_dataset import get_dataset_filenames
 
-models_with_name = [('HANGnet', HANGnet)] #,
+models_with_name = [('HANGnet_classify', HANGnet_classify)]
+#                    ('HANGnet', HANGnet),
 #                    ('HANGnet_dropout', HANGnet_dropout)]#, ('HANGnet_shallow', HANGnet_shallow),
 #                    ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
 
@@ -126,7 +127,7 @@ def main(training_data_dir: 'folder containing training data',
 
                 # Train model
                 optimizer = opt_generator(lr=0.0001)
-                model.compile(loss=custom_loss, optimizer=optimizer, metrics=["mse"])
+                model.compile(loss="binary_crossentropy", optimizer=optimizer, metrics=["accuracy"])
 
                 history = model.fit_generator(generator=training_generator, validation_data=validation_generator,
                                               use_multiprocessing=True, workers=6,
