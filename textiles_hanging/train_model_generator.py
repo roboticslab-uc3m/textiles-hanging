@@ -26,7 +26,7 @@ batch_sizes = [32]#, 64, 128]
 
 def custom_loss(y_true, y_pred):
     squared_components = K.square(y_true-y_pred)
-    return 0.2*squared_components[:, 0]+0.2*squared_components[:, 1]+0.6*squared_components[:, 2]
+    return 0.033 * squared_components[:, 0] + 0.033 * squared_components[:, 1] + 0.33 * squared_components[:, 2]
 
 
 @begin.start(auto_convert=True)
