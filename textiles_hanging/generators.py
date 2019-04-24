@@ -102,7 +102,7 @@ class HangingBinaryDataGenerator(Sequence):
             trajectory = np.array(trajectory_data).astype("float")
             # The next threshold is naive, but better than t < 0.2, as some of the examples are still in midair but
             # will fall down if more time is allowed
-            y[i, :] = trajectory[-1] < 0.81
+            y[i, 0] = trajectory[-1, 2] < 0.81
 
         if self.threshold:
             thres = 2
