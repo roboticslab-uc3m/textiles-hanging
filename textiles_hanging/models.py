@@ -199,7 +199,7 @@ def HANGnet_classify(weights_path=None):
 
     model.add(Flatten())
     model.add(Dense(500, activation='elu'))
-    model.add(Dense(1, activation='softmax'))
+    model.add(Dense(1, activation='sigmoid'))
 
     if weights_path:
         model.load_weights(weights_path)
