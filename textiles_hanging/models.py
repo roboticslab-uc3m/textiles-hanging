@@ -213,7 +213,7 @@ def HANGnet_classify_regularized(weights_path=None):
     regularization_strength = 0.001
 
     model = Sequential()
-    model.add(ZeroPadding2D((1, 1), input_shape=(180, 240, 1), kernel_regularizer=l2(regularization_strength)))
+    model.add(ZeroPadding2D((1, 1), input_shape=(180, 240, 1)))
 
     model.add(ZeroPadding2D((1, 1)))
     model.add(Conv2D(16, (3, 3), activation='elu', kernel_regularizer=l2(regularization_strength)))
