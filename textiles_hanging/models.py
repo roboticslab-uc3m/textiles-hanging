@@ -1,6 +1,7 @@
 from keras.models import Sequential
 from keras.layers.core import Flatten, Dense, Dropout
 from keras.layers.convolutional import Conv2D, MaxPooling2D, ZeroPadding2D
+from keras.regularizers import l2
 
 
 # define a HANGnet network
@@ -173,6 +174,7 @@ def HANGnet_shallow(weights_path=None):
 
     return model
 
+
 def HANGnet_classify(weights_path=None):
     model = Sequential()
     model.add(ZeroPadding2D((1, 1), input_shape=(180, 240, 1)))
@@ -200,6 +202,42 @@ def HANGnet_classify(weights_path=None):
     model.add(Flatten())
     model.add(Dense(500, activation='elu'))
     model.add(Dense(1, activation='sigmoid'))
+
+    if weights_path:
+        model.load_weights(weights_path)
+
+    return model
+
+
+def HANGnet_classify_regularized(weights_path=None):
+    regularization_strength = 0.001
+
+    model = Sequential()
+    model.add(ZeroPadding2D((1, 1), input_shape=(180, 240, 1), kernel_regularizer=l2(regularization_strength)))
+
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Conv2D(16, (3, 3), activation='elu', kernel_regularizer=l2(regularization_strength)))
+
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Conv2D(16, (3, 3), activation='elu', kernel_regularizer=l2(regularization_strength)))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(Conv2D(32, (3, 3), activation='elu', kernel_regularizer=l2(regularization_strength)))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Conv2D(16, (3, 3), activation='elu', kernel_regularizer=l2(regularization_strength)))
+
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Conv2D(16, (3, 3), activation='elu', kernel_regularizer=l2(regularization_strength)))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(Conv2D(32, (3, 3), activation='elu', kernel_regularizer=l2(regularization_strength)))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(Flatten())
+    model.add(Dense(500, activation='elu', kernel_regularizer=l2(regularization_strength)))
+    model.add(Dense(1, activation='sigmoid', kernel_regularizer=l2(regularization_strength)))
 
     if weights_path:
         model.load_weights(weights_path)

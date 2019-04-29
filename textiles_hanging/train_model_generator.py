@@ -11,11 +11,14 @@ from keras import backend as K
 from keras.optimizers import SGD, RMSprop, Adam
 from keras.callbacks import TensorBoard
 
-from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HANGnet_very_large, HANGnet_classify
+#from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HANGnet_very_large
+#from models import HANGnet_classify, HANGnet_classify_regularized
+from models import *
 from generators import HangingDataGenerator, HangingBinaryDataGenerator
 from convert_dataset import get_dataset_filenames
 
-models_with_name = [('HANGnet_classify', HANGnet_classify)]
+models_with_name = [('HANGnet_classify_regularized', HANGnet_classify_regularized)]
+#                    ('HANGnet_classify', HANGnet_classify)]
 #                    ('HANGnet', HANGnet),
 #                    ('HANGnet_dropout', HANGnet_dropout)]#, ('HANGnet_shallow', HANGnet_shallow),
 #                    ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
@@ -121,6 +124,8 @@ def main(training_data_dir: 'folder containing training data',
                                                                                                      opt_name))
                 figure_path = os.path.join(full_result_dir, "loss_plot_{}_{}_{}_{}.png".format(model_name, n_epoch,
                                                                                                batch_size, opt_name))
+                figure2_path = os.path.join(full_result_dir, "acc_plot_{}_{}_{}_{}.png".format(model_name, n_epoch,
+                                                                                               batch_size, opt_name))
 
                 # Create a tensorboard to log stats
                 tensorboard = TensorBoard(log_dir=full_log_dir, write_graph=False)
@@ -157,3 +162,12 @@ def main(training_data_dir: 'folder containing training data',
                 plt.xlabel('epoch')
                 plt.legend(['train', 'test'], loc='upper left')
                 plt.savefig(figure_path)
+
+                plt.figure()
+                plt.plot(history.history['acc'])
+                plt.plot(history.history['val_acc'])
+                plt.title('model accuracy')
+                plt.ylabel('acc')
+                plt.xlabel('epoch')
+                plt.legend(['train', 'test'], loc='upper left')
+                plt.savefig(figure2_path)
