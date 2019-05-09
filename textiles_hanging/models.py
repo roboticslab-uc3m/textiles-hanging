@@ -209,8 +209,9 @@ def HANGnet_classify(weights_path=None):
     return model
 
 
-def HANGnet_classify_regularized(weights_path=None):
-    regularization_strength = 0.001
+def HANGnet_classify_regularized(weights_path=None, regularization_strength=None):
+    if regularization_strength is None:
+        regularization_strength = 0.001
 
     model = Sequential()
     model.add(ZeroPadding2D((1, 1), input_shape=(180, 240, 1)))

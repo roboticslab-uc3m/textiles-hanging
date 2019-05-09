@@ -25,6 +25,8 @@ models_with_name = [('HANGnet_classify_regularized', HANGnet_classify_regularize
 
 optimizers_with_name = [('adam', Adam)]  #, ('sgd', SGD), ('rmsprop', RMSprop)]
 batch_sizes = [32]#, 64, 128]
+learning_rates = [0.0001, 0.0002, 0.0004, 0.001]
+regularization_strengths = [0.001]
 
 
 def custom_loss(y_true, y_pred):
@@ -91,83 +93,94 @@ def main(training_data_dir: 'folder containing training data',
     validation_generator = HangingBinaryDataGenerator(validation_files, training_data_dir, **params)
     test_generator = HangingBinaryDataGenerator(test_files, training_data_dir, **params)
 
-    for model_name, model_generator in models_with_name:
-        model = model_generator()
+    for learning_rate in learning_rates:
+        lr_results_dir = os.path.join(results_dir, "lr{}".format(learning_rate)) \
+            if len(learning_rates) > 1 else results_dir
+        lr_log_dir = os.path.join(log_dir, "lr{}".format(learning_rate)) if len(learning_rates) > 1 else log_dir
 
-        logging.info("Training model: {}".format(model_name))
-        logging.debug(model.summary())
-        if do_not_train:
-            exit(0)
+        for regularization_strength in regularization_strengths:
+            reg_results_dir = os.path.join(lr_results_dir, "reg{}".format(regularization_strength)) \
+                if len(regularization_strengths) > 1 else lr_results_dir
+            reg_log_dir = os.path.join(log_dir, "reg{}".format(regularization_strength)) \
+                if len(regularization_strengths) > 1 else lr_log_dir
 
-        for batch_size in batch_sizes:
-            for opt_name, opt_generator in optimizers_with_name:
-                # Generate paths for logging to files (results/logs)
-                full_log_dir = os.path.abspath(os.path.expanduser(os.path.join(log_dir,
-                                                                               "{}_{}_{}_{}".format(model_name,
-                                                                                                    n_epoch,
-                                                                                                    batch_size,
-                                                                                                    opt_name))))
-                full_result_dir = os.path.join(results_dir, model_name)
-                if not os.path.exists(full_result_dir):
-                    os.makedirs(full_result_dir)
-                weights_path = os.path.join(full_result_dir, 'hangnet-weights_{}_{}_{}_{}.h5'.format(model_name,
-                                                                                                     n_epoch,
-                                                                                                     batch_size,
-                                                                                                     opt_name))
-                history_path = os.path.join(full_result_dir, 'hangnet-history_{}_{}_{}_{}.pickle'.format(model_name,
-                                                                                                         n_epoch,
-                                                                                                         batch_size,
-                                                                                                         opt_name))
-                score_path = os.path.join(full_result_dir, 'hangnet-score_{}_{}_{}_{}.pickle'.format(model_name,
-                                                                                                     n_epoch,
-                                                                                                     batch_size,
-                                                                                                     opt_name))
-                figure_path = os.path.join(full_result_dir, "loss_plot_{}_{}_{}_{}.png".format(model_name, n_epoch,
-                                                                                               batch_size, opt_name))
-                figure2_path = os.path.join(full_result_dir, "acc_plot_{}_{}_{}_{}.png".format(model_name, n_epoch,
-                                                                                               batch_size, opt_name))
+            for model_name, model_generator in models_with_name:
+                model = model_generator()
 
-                # Create a tensorboard to log stats
-                tensorboard = TensorBoard(log_dir=full_log_dir, write_graph=False)
+                logging.info("Training model: {}".format(model_name))
+                logging.debug(model.summary())
+                if do_not_train:
+                    exit(0)
 
-                # Train model
-                optimizer = opt_generator(lr=0.0001)
-                model.compile(loss="binary_crossentropy", optimizer=optimizer, metrics=["accuracy"])
+                for batch_size in batch_sizes:
+                    for opt_name, opt_generator in optimizers_with_name:
+                        # Generate paths for logging to files (results/logs)
+                        full_log_dir = os.path.abspath(os.path.expanduser(os.path.join(reg_log_dir,
+                                                                                       "{}_{}_{}_{}".format(model_name,
+                                                                                                            n_epoch,
+                                                                                                            batch_size,
+                                                                                                            opt_name))))
+                        full_result_dir = os.path.join(reg_results_dir, model_name)
+                        if not os.path.exists(full_result_dir):
+                            os.makedirs(full_result_dir)
+                        weights_path = os.path.join(full_result_dir, 'hangnet-weights_{}_{}_{}_{}.h5'.format(model_name,
+                                                                                                             n_epoch,
+                                                                                                             batch_size,
+                                                                                                             opt_name))
+                        history_path = os.path.join(full_result_dir, 'hangnet-history_{}_{}_{}_{}.pickle'.format(model_name,
+                                                                                                                 n_epoch,
+                                                                                                                 batch_size,
+                                                                                                                 opt_name))
+                        score_path = os.path.join(full_result_dir, 'hangnet-score_{}_{}_{}_{}.pickle'.format(model_name,
+                                                                                                             n_epoch,
+                                                                                                             batch_size,
+                                                                                                             opt_name))
+                        figure_path = os.path.join(full_result_dir, "loss_plot_{}_{}_{}_{}.png".format(model_name, n_epoch,
+                                                                                                       batch_size, opt_name))
+                        figure2_path = os.path.join(full_result_dir, "acc_plot_{}_{}_{}_{}.png".format(model_name, n_epoch,
+                                                                                                       batch_size, opt_name))
 
-                history = model.fit_generator(generator=training_generator, validation_data=validation_generator,
-                                              use_multiprocessing=True, workers=6,
-                                              epochs=n_epoch,
-                                              verbose=VERBOSE, callbacks=[tensorboard])
+                        # Create a tensorboard to log stats
+                        tensorboard = TensorBoard(log_dir=full_log_dir, write_graph=False)
 
-                # Evaluate and save results to files
-                model.save_weights(weights_path)
-                with open(history_path, 'wb') as f:
-                    pickle.dump(history.history, f)
+                        # Train model
+                        optimizer = opt_generator(lr=0.0001)
+                        model.compile(loss="binary_crossentropy", optimizer=optimizer, metrics=["accuracy"])
 
-                score = model.evaluate_generator(generator=test_generator, verbose=VERBOSE,
-                                                 use_multiprocessing=True, workers=6,)
-                logging.info("Test score:")
-                for metric, s in zip(model.metrics_names, score):
-                    logging.info("\t- {}: {}".format(metric, s))
+                        history = model.fit_generator(generator=training_generator, validation_data=validation_generator,
+                                                      use_multiprocessing=True, workers=6,
+                                                      epochs=n_epoch,
+                                                      verbose=VERBOSE, callbacks=[tensorboard])
 
-                with open(score_path, 'wb') as f:
-                    pickle.dump(score, f)
+                        # Evaluate and save results to files
+                        model.save_weights(weights_path)
+                        with open(history_path, 'wb') as f:
+                            pickle.dump(history.history, f)
 
-                # Plot loss to a file for feedback
-                plt.figure()
-                plt.plot(history.history['loss'])
-                plt.plot(history.history['val_loss'])
-                plt.title('model loss')
-                plt.ylabel('loss')
-                plt.xlabel('epoch')
-                plt.legend(['train', 'test'], loc='upper left')
-                plt.savefig(figure_path)
+                        score = model.evaluate_generator(generator=test_generator, verbose=VERBOSE,
+                                                         use_multiprocessing=True, workers=6,)
+                        logging.info("Test score:")
+                        for metric, s in zip(model.metrics_names, score):
+                            logging.info("\t- {}: {}".format(metric, s))
 
-                plt.figure()
-                plt.plot(history.history['acc'])
-                plt.plot(history.history['val_acc'])
-                plt.title('model accuracy')
-                plt.ylabel('acc')
-                plt.xlabel('epoch')
-                plt.legend(['train', 'test'], loc='upper left')
-                plt.savefig(figure2_path)
+                        with open(score_path, 'wb') as f:
+                            pickle.dump(score, f)
+
+                        # Plot loss to a file for feedback
+                        plt.figure()
+                        plt.plot(history.history['loss'])
+                        plt.plot(history.history['val_loss'])
+                        plt.title('model loss')
+                        plt.ylabel('loss')
+                        plt.xlabel('epoch')
+                        plt.legend(['train', 'test'], loc='upper left')
+                        plt.savefig(figure_path)
+
+                        plt.figure()
+                        plt.plot(history.history['acc'])
+                        plt.plot(history.history['val_acc'])
+                        plt.title('model accuracy')
+                        plt.ylabel('acc')
+                        plt.xlabel('epoch')
+                        plt.legend(['train', 'test'], loc='upper left')
+                        plt.savefig(figure2_path)
