@@ -126,7 +126,16 @@ class TextilesHangingEvaluationWidget(QtWidgets.QWidget):
             logging.error("Generator has not been setup correctly")
             exit(-1)
         self.generator = enumerate(iter(self.generator))
-        self.get_next_batch()
+
+        if os.path.exists('out.pickle'):
+            with open('out.pickle', 'rb') as f:
+                self.output_data = pickle.load(f)
+            current_batch = int(len(self.output_data) / 100)
+        else:
+            current_batch = 1
+
+        for i in range(current_batch):
+            self.get_next_batch()
         self.update_image()
 
     def get_next_batch(self):
