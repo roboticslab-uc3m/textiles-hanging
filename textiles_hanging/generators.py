@@ -29,7 +29,8 @@ class HangingDataGenerator(Sequence):
         self.on_epoch_end()
 
     def on_epoch_end(self):
-        np.random.shuffle(self.data_file_ids)
+        if self.shuffle:
+            np.random.shuffle(self.data_file_ids)
 
     def _data_generation(self, files_to_load):
         X = np.empty((self.batch_size, self.dims[0], self.dims[1], 1))
@@ -84,7 +85,8 @@ class HangingBinaryDataGenerator(Sequence):
         self.on_epoch_end()
 
     def on_epoch_end(self):
-        np.random.shuffle(self.data_file_ids)
+        if self.shuffle:
+            np.random.shuffle(self.data_file_ids)
 
     def _data_generation(self, files_to_load):
         X = np.empty((self.batch_size, self.dims[0], self.dims[1], 1))
