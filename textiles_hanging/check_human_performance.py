@@ -53,6 +53,7 @@ class TextilesHangingEvaluationWidget(QtWidgets.QWidget):
         self.infoLabel_string = None
         self.graphicsView = None
         self.pixmap = QtGui.QPixmap()
+        self.scale = None
 
         # Iteration over input data
         self.generator = None
@@ -100,7 +101,9 @@ class TextilesHangingEvaluationWidget(QtWidgets.QWidget):
         img = np.uint8(img * 255)
         qimage = qimage2ndarray.array2qimage(img[:, :, 0, :3])
         scene = QtWidgets.QGraphicsScene()
-        scene.addItem(QtWidgets.QGraphicsPixmapItem(QtGui.QPixmap.fromImage(qimage)))
+        pixmap = QtGui.QPixmap.fromImage(qimage)
+        pixmap = pixmap.scaledToHeight(self.scale) if self.scale else pixmap
+        scene.addItem(QtWidgets.QGraphicsPixmapItem(pixmap))
         self.graphicsView.setScene(scene)
         self.graphicsView.show()
         self.infoLabel.setText(self.infoLabel_string.format(i+1))
@@ -151,7 +154,8 @@ class TextilesHangingEvaluationWidget(QtWidgets.QWidget):
 @begin.start(auto_convert=True)
 @begin.logging
 def main(test_files: 'Pickle file containing the names of the files to be labeled',
-         input_folder: 'Folder containing the files to be labeled'):
+         input_folder: 'Folder containing the files to be labeled',
+         scale: 'Desired height for the image to be labeled'=None):
     test_files = os.path.abspath(os.path.expanduser(test_files))
     input_folder = os.path.abspath(os.path.expanduser(input_folder))
     logging.info("Starting labeling utility with the following params:")
@@ -167,6 +171,8 @@ def main(test_files: 'Pickle file containing the names of the files to be labele
     # Create Qt App
     app = QtWidgets.QApplication(sys.argv)
     gui = TextilesHangingEvaluationWidget()
+    if scale:
+        gui.scale = scale
     gui.generator = training_generator
     gui.start()
     gui.show()
