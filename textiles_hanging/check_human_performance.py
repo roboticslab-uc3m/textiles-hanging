@@ -1,10 +1,18 @@
 import os
 import sys
+import logging
+import pickle
 from collections import namedtuple
 from operator import itemgetter
 
+import begin
 from PySide2 import QtCore, QtGui, QtWidgets
 from PySide2 import QtUiTools
+import qimage2ndarray
+import numpy as np
+import matplotlib
+
+from generators import HangingBinaryDataGenerator
 
 
 def load_ui(file_name, where=None):
@@ -42,17 +50,17 @@ class TextilesHangingEvaluationWidget(QtWidgets.QWidget):
         self.floorResultButton = None
         self.badResultButton = None
         self.infoLabel = None
+        self.infoLabel_string = None
         self.graphicsView = None
         self.pixmap = QtGui.QPixmap()
 
         # Iteration over input data
-        self.input_results = None
-        self.input_iterator = None
-        self.current_result = None
+        self.generator = None
+        self.current_batch = None
 
         # Output data related
         self.output_data = []
-        self.current_output = None
+        self.current_label = None
         self.output_data_path = os.path.abspath('.')
 
         self.setup_ui()
@@ -69,113 +77,94 @@ class TextilesHangingEvaluationWidget(QtWidgets.QWidget):
         self.hangedResultButton = self.findChild(QtWidgets.QPushButton, 'hangedResultButton')
         self.floorResultButton = self.findChild(QtWidgets.QPushButton, 'floorResultButton')
         self.infoLabel = self.findChild(QtWidgets.QLabel, 'infoLabel')
+        self.infoLabel.setText("Advertise yourself here! Call now!")
         self.graphicsView = self.findChild(QtWidgets.QGraphicsView, 'graphicsView')
 
         # Connect slots / callbacks
-        # self.greatResultButton.clicked.connect(self.on_great_button_clicked)
-        # self.goodResultButton.clicked.connect(self.on_good_button_clicked)
+        self.hangedResultButton.clicked.connect(self.on_hanged_button_clicked)
+        self.floorResultButton.clicked.connect(self.on_floor_button_clicked)
 
-    def update_image(self, filename):
+    def update_image(self):
         """
         Set pixmap in widget's graphics view
         """
-        # Load image
-        if filename:
-            with open(filename, 'r') as f:
-                image = f.read()
+        try:
+            i, img = self.current_batch.__next__()
+        except StopIteration:
+            with open("out.pickle", "wb") as f:
+                pickle.dump(self.output_data, f)
+                self.get_next_batch()
+                self.update_image()
 
-            self.pixmap.loadFromData(image, os.path.splitext(filename)[1])
-        else:
-            return False
-
-        # create scene
-        scene = QtGui.QGraphicsScene()
-        scene.addItem(QtGui.QGraphicsPixmapItem(self.pixmap))
+        img = matplotlib.cm.get_cmap('gist_stern')(img)
+        img = np.uint8(img * 255)
+        qimage = qimage2ndarray.array2qimage(img[:, :, 0, :3])
+        scene = QtWidgets.QGraphicsScene()
+        scene.addItem(QtWidgets.QGraphicsPixmapItem(QtGui.QPixmap.fromImage(qimage)))
         self.graphicsView.setScene(scene)
         self.graphicsView.show()
+        self.infoLabel.setText(self.infoLabel_string.format(i+1))
 
-    # def on_great_button_clicked(self):
-    #     self.current_output.append(1)
-    #     self.on_button_clicked()
-    #
-    # def on_good_button_clicked(self):
-    #     self.current_output.append(0.5)
-    #     self.on_button_clicked()
-    #
-    # def on_bad_button_clicked(self):
-    #     self.current_output.append(0)
-    #     image_file = self.load_next_result()
-    #     self.update_image(image_file)
-    #
-    # def on_button_clicked(self):
-    #     """
-    #     Try to load next image, if there is no image left, load the next item
-    #     """
-    #     try:
-    #         image_file = self.current_result.next()
-    #     except StopIteration as e:
-    #         image_file = self.load_next_result()
-    #
-    #     self.update_image(image_file)
-    #
-    # def load_next_result(self):
-    #     """
-    #     Load the next item in input results
-    #     """
-    #     try:
-    #         self.current_result = iter(self.input_iterator.next())
-    #     except StopIteration as e:
-    #         print("nothing left!")
-    #         self.save_data_to_file(self.output_data_path)
-    #         QtCore.QCoreApplication.instance().quit()
-    #     else:
-    #         # Info label setup
-    #         garment_name = self.current_result.next()
-    #         bumpiness_data = self.current_result.next()
-    #         self.infoLabel.setText("Garment: {}\t\t Bumpiness:{}".format(garment_name, bumpiness_data))
-    #
-    #         # Create new output entry (and do backup)
-    #         self.current_output = list()
-    #         self.current_output.append(garment_name)
-    #         self.output_data.append(self.current_output)
-    #         self.save_data_to_file(self.output_data_path)
-    #
-    #         # Get first image
-    #         image_file = self.current_result.next()
-    #         return image_file
-    #
-    # def save_data_to_file(self, filename):
-    #     with open(filename, 'w') as f:
-    #         for entry in sorted(self.output_data, key=itemgetter(0)):
-    #             try:
-    #                 # Pad right with -1 for each non-present item
-    #                 padded_entry = list(entry)
-    #                 padded_entry.extend([-1]*(4-len(entry)))
-    #                 for item in padded_entry:
-    #                     f.write('{} '.format(item))
-    #                 f.write('\n')
-    #             except TypeError as e:
-    #                 # nothing to write
-    #                 print(e)
-    #
-    # def start(self, folder):
-    #     """
-    #     Load files in folder and starts the evaluation process
-    #     """
-    #     self.input_results = load_results_data(folder)
-    #     self.input_iterator = iter(self.input_results)
-    #     self.update_image(self.load_next_result())
+    def on_hanged_button_clicked(self):
+        self.current_label = 1
+        self.on_button_clicked()
+
+    def on_floor_button_clicked(self):
+        self.current_label = 0
+        self.on_button_clicked()
+
+    def on_button_clicked(self):
+        """
+        Try to load next image, if there is no image left, load the next item
+        """
+        self.output_data.append(self.current_label)
+        self.current_label = None
+        self.update_image()
+
+    def start(self):
+        if not self.generator:
+            logging.error("Generator has not been setup correctly")
+            exit(-1)
+        self.generator = enumerate(iter(self.generator))
+        self.get_next_batch()
+        self.update_image()
+
+    def get_next_batch(self):
+        try:
+            index, data = self.generator.__next__()
+        except StopIteration:
+            logging.info("No more data left")
+            self.close()
+        self.current_batch = enumerate(iter(data[0]))
+        self.infoLabel_string = "Current batch: {}".format(index) + " Current image: {}/100"
 
 
-if __name__ == '__main__':
+@begin.start(auto_convert=True)
+@begin.logging
+def main(test_files: 'Pickle file containing the names of the files to be labeled',
+         input_folder: 'Folder containing the files to be labeled'):
+    test_files = os.path.abspath(os.path.expanduser(test_files))
+    input_folder = os.path.abspath(os.path.expanduser(input_folder))
+    logging.info("Starting labeling utility with the following params:")
+    logging.info("Test files file: {}".format(test_files))
+    logging.info("Input folder: {}".format(input_folder))
+
+    # Create data generator
+    with open(test_files, 'rb') as f:
+        test_files = pickle.load(f)
+    params = {'batch_size': 100, 'resize': True,  'shuffle': False}
+    training_generator = HangingBinaryDataGenerator(test_files, input_folder, **params)
+
     # Create Qt App
     app = QtWidgets.QApplication(sys.argv)
-
-    # Create the widget and show it
     gui = TextilesHangingEvaluationWidget()
-    #gui.output_data_path = os.path.expanduser('~/Research/garments-birdsEye-flat-results/output.txt')
-    #gui.start(os.path.expanduser('~/Research/garments-birdsEye-flat-results'))
+    gui.generator = training_generator
+    gui.start()
     gui.show()
 
     # Run the app
     sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()
