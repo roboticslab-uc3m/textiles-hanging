@@ -13,6 +13,7 @@ from keras.optimizers import SGD, RMSprop, Adam
 from keras.callbacks import TensorBoard
 from tqdm import tqdm
 from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.utils.class_weight import compute_class_weight
 
 from models import *
 from generators import HangingDataGenerator, HangingBinaryDataGenerator
@@ -156,11 +157,15 @@ def main(training_data_dir: 'folder containing training data',
 
                         # Train model
                         optimizer = opt_generator(lr=0.0001)
+                        class_weights = compute_class_weight('balanced',
+                                                             np.unique(dataset_labels[X_indexes][X_train_indexes]),
+                                                             dataset_labels[X_indexes][X_train_indexes])
                         model.compile(loss="binary_crossentropy", optimizer=optimizer, metrics=["accuracy"])
 
                         history = model.fit_generator(generator=training_generator, validation_data=validation_generator,
                                                       use_multiprocessing=True, workers=6,
                                                       epochs=n_epoch,
+                                                      class_weights=class_weights,
                                                       verbose=VERBOSE, callbacks=[tensorboard])
 
                         # Evaluate and save results to files
