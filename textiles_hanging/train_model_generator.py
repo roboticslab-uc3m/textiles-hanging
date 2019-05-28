@@ -81,9 +81,10 @@ def main(training_data_dir: 'folder containing training data',
         trajectory_data = np.array(list(reader)).astype("float")
         dataset_labels[i] = trajectory_data[-1, 2] < 0.81
     sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=1)  # Fixed for comparison of models
+    sss2 = StratifiedShuffleSplit(n_splits=1, test_size=0.2)
     X_indexes, X_test_indexes = sss.split(dataset_files_as_array, dataset_labels).__next__()
     test_files = dataset_files_as_array[X_test_indexes]
-    X_train_indexes, X_val_indexes = sss.split(dataset_files_as_array[X_indexes], dataset_labels[X_indexes]).__next__()
+    X_train_indexes, X_val_indexes = sss2.split(dataset_files_as_array[X_indexes], dataset_labels[X_indexes]).__next__()
     train_files = dataset_files_as_array[X_indexes][X_train_indexes]
     validation_files = dataset_files_as_array[X_indexes][X_val_indexes]
 
