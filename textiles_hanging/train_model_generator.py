@@ -26,8 +26,8 @@ models_with_name = [('HANGnet_classify_regularized', HANGnet_classify_regularize
 
 optimizers_with_name = [('adam', Adam)]  #, ('sgd', SGD), ('rmsprop', RMSprop)]
 batch_sizes = [32]#, 64, 128]
-learning_rates = [0.0001, 0.0002, 0.0004, 0.001]
-regularization_strengths = [0.001]
+learning_rates = [0.0001]  #, 0.0002, 0.0004, 0.001]
+regularization_strengths = [0.001]  #, 0.002, 0.043, 0.01]
 
 
 def custom_loss(y_true, y_pred):
