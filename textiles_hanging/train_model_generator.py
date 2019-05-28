@@ -2,6 +2,7 @@ import logging
 import os
 import pickle
 from time import time
+import csv
 
 import begin
 import numpy as np
@@ -10,9 +11,9 @@ import matplotlib.pyplot as plt
 from keras import backend as K
 from keras.optimizers import SGD, RMSprop, Adam
 from keras.callbacks import TensorBoard
+from tqdm import tqdm
+from sklearn.model_selection import StratifiedShuffleSplit
 
-#from models import HANGnet, HANGnet_dropout, HANGnet_shallow, HANGnet_large, HANGnet_very_large
-#from models import HANGnet_classify, HANGnet_classify_regularized
 from models import *
 from generators import HangingDataGenerator, HangingBinaryDataGenerator
 from convert_dataset import get_dataset_filenames
@@ -44,8 +45,10 @@ def main(training_data_dir: 'folder containing training data',
          validation_split=0.2):
 
     mpl.use('Agg')  # Plot without X
+    training_data_dir = os.path.abspath(os.path.expanduser(training_data_dir))
 
     logging.info("Current configuration: ")
+    logging.info("Training data folder: {}".format(training_data_dir))
     logging.info("Number of epochs: {}".format(n_epoch))
     logging.info("Batch size: {}".format(batch_size))
     logging.info("Optimizer: {}".format(optimizer))
@@ -68,13 +71,21 @@ def main(training_data_dir: 'folder containing training data',
         with open('hangnet-last-dataset-filenames.pickle', 'wb') as f:
             pickle.dump(dataset_files, f)
 
-    # Split dataset
-    np.random.shuffle(dataset_files)
-    test_size = int(np.floor(0.2*len(dataset_files)))
-    validation_size = int(np.floor(validation_split*(1-0.2)*len(dataset_files)))
-    test_files = dataset_files[:test_size]
-    validation_files = dataset_files[test_size:test_size+validation_size]
-    train_files = dataset_files[test_size+validation_size:]
+    # Get labels to make a stratified split
+    # Note: be sure to use the same criteria for the labels as the generator used for training
+    dataset_files_as_array = np.array(dataset_files)
+    dataset_labels = np.empty(dataset_files_as_array.shape, dtype=np.uint8)
+    for i, row in tqdm(enumerate(dataset_files_as_array)):
+        reader = csv.reader(open(os.path.join(training_data_dir, row + '.csv'), "r"), delimiter=" ")
+        trajectory_data = np.array(list(reader)).astype("float")
+        dataset_labels[i] = trajectory_data[-1, 2] < 0.81
+    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=1)  # Fixed for comparison of models
+    X_indexes, X_test_indexes = sss.split(dataset_files_as_array, dataset_labels).__next__()
+    test_files = dataset_files_as_array[X_test_indexes]
+    X_train_indexes, X_val_indexes = sss.split(dataset_files_as_array[X_indexes], dataset_labels[X_indexes]).__next__()
+    train_files = dataset_files_as_array[X_indexes][X_train_indexes]
+    validation_files = dataset_files_as_array[X_indexes][X_val_indexes]
+
     logging.info("Training set: {} examples".format(len(train_files)))
     logging.info("Validation set: {} examples".format(len(validation_files)))
     logging.info("Test set: {} examples".format(len(test_files)))

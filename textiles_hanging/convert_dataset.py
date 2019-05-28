@@ -15,6 +15,7 @@ import numpy as np
 
 exr_filext = '.exr0200.exr'
 
+
 def get_dataset_filenames(data_folder):
     img_prefix, img_ext = 'img-', exr_filext
     exr_files = [f for f in os.listdir(data_folder) if img_prefix in f and img_ext in f]
