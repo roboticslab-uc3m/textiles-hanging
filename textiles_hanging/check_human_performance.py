@@ -172,7 +172,7 @@ def main(test_files: 'Pickle file containing the names of the files to be labele
     app = QtWidgets.QApplication(sys.argv)
     gui = TextilesHangingEvaluationWidget()
     if scale:
-        gui.scale = scale
+        gui.scale = int(scale)
     gui.generator = training_generator
     gui.start()
     gui.show()
