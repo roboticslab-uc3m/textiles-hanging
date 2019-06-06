@@ -19,9 +19,9 @@ from models import *
 from generators import HangingDataGenerator, HangingBinaryDataGenerator
 from convert_dataset import get_dataset_filenames
 
-models_with_name = [('HANGnet_classify_regularized', HANGnet_classify_regularized)]
+models_with_name = [ #('HANGnet_classify_regularized', HANGnet_classify_regularized)]
 #                    ('HANGnet_classify', HANGnet_classify)]
-#                    ('HANGnet', HANGnet),
+                     ('HANGnet', HANGnet)] #,
 #                    ('HANGnet_dropout', HANGnet_dropout)]#, ('HANGnet_shallow', HANGnet_shallow),
 #                    ('HANGnet_large', HANGnet_large), ('HANGnet_very_large', HANGnet_very_large)]
 
@@ -43,7 +43,7 @@ def main(training_data_dir: 'folder containing training data',
          results_dir: 'Weights, train-validation partition and other results go here'='./results',
          do_not_train: 'If present, exits after summary'=False,
          n_epoch=20, batch_size=128, optimizer: 'Optimizer to be used [adam, sgd, rmsprop]'='adam',
-         validation_split=0.2):
+         regression=False):
 
     mpl.use('Agg')  # Plot without X
     training_data_dir = os.path.abspath(os.path.expanduser(training_data_dir))
@@ -102,9 +102,14 @@ def main(training_data_dir: 'folder containing training data',
     # Create data generator
     params = {'batch_size': batch_size, 'resize': True,  'shuffle': True}
 
-    training_generator = HangingBinaryDataGenerator(train_files, training_data_dir, **params)
-    validation_generator = HangingBinaryDataGenerator(validation_files, training_data_dir, **params)
-    test_generator = HangingBinaryDataGenerator(test_files, training_data_dir, **params)
+    if not regression:
+        training_generator = HangingBinaryDataGenerator(train_files, training_data_dir, **params)
+        validation_generator = HangingBinaryDataGenerator(validation_files, training_data_dir, **params)
+        test_generator = HangingBinaryDataGenerator(test_files, training_data_dir, **params)
+    else:
+        training_generator = HangingDataGenerator(train_files, training_data_dir, **params)
+        validation_generator = HangingDataGenerator(validation_files, training_data_dir, **params)
+        test_generator = HangingDataGenerator(test_files, training_data_dir, **params)
 
     for learning_rate in learning_rates:
         lr_results_dir = os.path.join(results_dir, "lr{}".format(learning_rate)) \
@@ -161,9 +166,12 @@ def main(training_data_dir: 'folder containing training data',
                         class_weights = compute_class_weight('balanced',
                                                              np.unique(dataset_labels[X_indexes][X_train_indexes]),
                                                              dataset_labels[X_indexes][X_train_indexes])
-                        model.compile(loss="binary_crossentropy", optimizer=optimizer, metrics=["accuracy"])
+                        model.compile(loss=custom_loss if regression else "binary_crossentropy",
+                                      optimizer=optimizer,
+                                      metrics=["mse"] if regression else ["accuracy"])
 
-                        history = model.fit_generator(generator=training_generator, validation_data=validation_generator,
+                        history = model.fit_generator(generator=training_generator,
+                                                      validation_data=validation_generator,
                                                       use_multiprocessing=True, workers=6,
                                                       epochs=n_epoch,
                                                       class_weights=class_weights,
