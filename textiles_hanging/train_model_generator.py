@@ -170,12 +170,13 @@ def main(training_data_dir: 'folder containing training data',
                                       optimizer=optimizer,
                                       metrics=["mse"] if regression else ["accuracy"])
 
+                        classification_params = {'class_weight': class_weights} if not regression else {}
                         history = model.fit_generator(generator=training_generator,
                                                       validation_data=validation_generator,
                                                       use_multiprocessing=True, workers=6,
                                                       epochs=n_epoch,
-                                                      class_weights=class_weights,
-                                                      verbose=VERBOSE, callbacks=[tensorboard])
+                                                      verbose=VERBOSE, callbacks=[tensorboard],
+                                                      **classification_params)
 
                         # Evaluate and save results to files
                         model.save_weights(weights_path)
