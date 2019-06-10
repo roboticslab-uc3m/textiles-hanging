@@ -16,7 +16,7 @@ import numpy as np
 exr_filext = '.exr0200.exr'
 
 
-def get_dataset_filenames(data_folder):
+def get_dataset_filenames(data_folder, label=None):
     img_prefix, img_ext = 'img-', exr_filext
     exr_files = [f for f in os.listdir(data_folder) if img_prefix in f and img_ext in f]
     files = [f[:f.find('.')] for f in exr_files]
@@ -34,7 +34,20 @@ def get_dataset_filenames(data_folder):
 
     logging.debug("{} files found.".format(len(files)))
     logging.debug(files)
+
+    if label:  # Filter dataset
+        return [file for file in files if get_label(os.path.join(data_folder, file + '.csv')) == label]
+
     return files
+
+
+def get_label(trajectory_file):
+    reader = csv.reader(open(trajectory_file, "r"), delimiter=" ")
+    trajectory_data = list(reader)
+    trajectory = np.array(trajectory_data).astype("float")
+    # The next threshold is naive, but better than t < 0.2, as some of the examples are still in midair but
+    # will fall down if more time is allowed
+    return int(trajectory[-1, 2] < 0.81)
 
 
 def numpy_from_exr(filepath):
