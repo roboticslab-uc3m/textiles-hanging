@@ -68,7 +68,7 @@ def main(training_data_dir: 'folder containing training data',
         with open(os.path.join(training_data_dir, 'dataset_files.pickle'), 'rb') as f:
             dataset_files = pickle.load(f)
     else:
-        dataset_files = get_dataset_filenames(training_data_dir)
+        dataset_files = get_dataset_filenames(training_data_dir, label=1)
         with open('hangnet-last-dataset-filenames.pickle', 'wb') as f:
             pickle.dump(dataset_files, f)
 
